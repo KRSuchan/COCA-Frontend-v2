@@ -111,8 +111,10 @@ REACT_APP_API_URL=http://localhost:8080
 ```
 npm start
 ```
----
 ### 3. 로그인
-ID : tester0000  
-PWD : tester0000  
+```
+ID : tester0000
+PW : tester0000
+```
+---
 #### 더 자세한 내용은 [프로젝트 문서](https://github.com/kit-COCA/cocaBack/tree/main/documents)를 참고해주세요.
