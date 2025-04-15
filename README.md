@@ -1,5 +1,5 @@
 
-# 📅 COCA Backend
+# 📅 COCA Frontend
 
 이 프로젝트는 **COCA** 서비스의 프론트엔드입니다. 
 **COCA** 서비스의 백엔드는 [해당 링크](https://github.com/kit-COCA/COCA-Backend)를 참고해주세요.
