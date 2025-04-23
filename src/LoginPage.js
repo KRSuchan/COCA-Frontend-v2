@@ -118,7 +118,7 @@ function LoginPage() {
               <button className="signup-button" type="submit" onClick={handleSignUp}>SIGN UP</button>
             </div>
           </div>
-          <h1 className="right-aligned">COCA</h1>
+          <h1 className="right-aligned">COCA v2</h1>
         </div>
 
       </div>
