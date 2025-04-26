@@ -10,7 +10,9 @@ function LoginPage() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
-
+  console.log("=========== 현재 접속되는 SERVER URL ===========")
+  console.log(process.env.REACT_APP_SERVER_URL)
+  console.log("============================================")
   useEffect(() => {
     const id = localStorage.getItem('userId');
 
