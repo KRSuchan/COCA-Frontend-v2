@@ -127,6 +127,16 @@ const LoginCheckPage = () => {
     navigate(-1);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (e.target.name === 'id') {
+        document.getElementById('pw').focus();
+      } else if (e.target.name === 'pw') {
+        handleLogin();
+      }
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -161,11 +171,13 @@ const LoginCheckPage = () => {
           <label>비밀번호</label>
           <input
             type="password"
+            name="pw"
             value={userInfo.password}
             onChange={e =>
               setUserInfo({ ...userInfo, password: e.target.value })
             }
             className={styles.inputField}
+            onKeyDown={handleKeyDown}
           />
         </div>
         <div className={styles.buttonContainer}>
