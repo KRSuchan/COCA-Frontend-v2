@@ -10,9 +10,14 @@ function LoginPage() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
-  console.log("=========== 현재 접속되는 SERVER URL ===========")
-  console.log(process.env.REACT_APP_SERVER_URL)
-  console.log("============================================")
+  const project = 'COCA_v2';
+  const version = process.env.REACT_APP_VERSION;
+  useEffect(()=>{
+    console.log("=========== 현재 접속되는 SERVER URL ===========");
+    console.log(process.env.REACT_APP_SERVER_URL);
+    console.log("=========== 현재 프론트 버전 ===========");
+    console.log(process.env.REACT_APP_VERSION);
+  },[])
   useEffect(() => {
     const id = localStorage.getItem('userId');
 
@@ -22,7 +27,7 @@ function LoginPage() {
     else {
       dispatch({ type: 'RESET_STATE', payload: null });
     }
-  })
+  },[])
 
   const handleLogin = () => {
     login();
@@ -120,7 +125,8 @@ function LoginPage() {
               <button className="signup-button" type="submit" onClick={handleSignUp}>SIGN UP</button>
             </div>
           </div>
-          <h1 className="right-aligned">COCA v202504231227</h1>
+          <h1 className="right-aligned">{project}</h1>
+          <h2 style={{ textAlign: 'right' }}>{'Front updated.' + version}</h2>
         </div>
 
       </div>

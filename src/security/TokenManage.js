@@ -1,9 +1,50 @@
 import axios from "axios";
 import Swal from "sweetalert2";
 
-export const refreshAccessToken = async (navigate) => {
-  const refreshToken = localStorage.getItem("refreshToken");
+export const logout = async (navigate) => {
+  const accessToken = localStorage.getItem("accessToken");
+
   try {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
+
+    const res = await axios.post(
+      process.env.REACT_APP_SERVER_URL + "/api/member/logoutReq",
+      null,
+      config
+    );
+
+    if (res.data.code === 200) {
+      localStorage.clear();
+      navigate("/");
+      return;
+    }
+
+    if (res.data.code === 401) {
+      // accessToken 만료 시도 -> refresh로 재발급
+      const refreshed = await refreshAccessToken(navigate);
+      if (refreshed) {
+        // 재시도
+        return logout(navigate);
+      } else {
+        // refresh 실패 시 여기서 종료
+        return;
+      }
+    }
+
+  } catch (error) {
+    console.error("logout error", error);
+    // 네트워크 오류 등 서버 응답조차 없을 때도 세션 종료 처리
+    await forceLogout(navigate);
+  }
+};
+
+export const refreshAccessToken = async (navigate) => {
+  try {
+    const refreshToken = localStorage.getItem("refreshToken");
     const config = {
       headers: {
         Authorization: `Bearer ${refreshToken}`,
@@ -16,54 +57,29 @@ export const refreshAccessToken = async (navigate) => {
       config
     );
 
-    console.log("refresh", response.data);
-
-    if(response.data.code === 200) {
-        localStorage.setItem("accessToken", response.data.data.accessToken);
-        localStorage.setItem("refreshToken", response.data.data.refreshToken);
+    if (response.data.code === 200) {
+      localStorage.setItem("accessToken", response.data.data.accessToken);
+      localStorage.setItem("refreshToken", response.data.data.refreshToken);
+      return true;
     } else {
-        throw new Error('Token refresh Error');
+      throw new Error("Token refresh failed");
     }
-  } catch (error) {
-    console.error("Token refresh error:", error);
-    // 로그아웃 처리 또는 다른 대응
-    Swal.fire({
-      icon: "error",
-      title: "세션이 만료되었어요!<br>다시 로그인 해주세요!",
-      confirmButtonText: "확인",
-    }).then((res) => {
-        // 통신 없이 로그아웃 처리(토큰만 삭제)
-      localStorage.clear();
-      navigate("/");
-    });
+  } catch (err) {
+    console.error("Token refresh failed", err);
+    await forceLogout(navigate);
+    return false;
   }
 };
 
-export const logout = async (navigate) => {
-    const accessToken = localStorage.getItem("accessToken");
-    try {
-        const config = {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-        };
-        const res = await axios.post(process.env.REACT_APP_SERVER_URL + '/api/member/logoutReq', null, config);
-        console.log(res);
-        if(res.data.code === 200) {
-            localStorage.clear();
-            navigate("/");
-        }
-
-        if(res.data.code === 401) {
-            throw new Error('access code is Expired');
-        }
-    } catch (error) {
-        console.error(error);
-
-        await refreshAccessToken(navigate);
-
-        logout(navigate);
-    }
+const forceLogout = async (navigate) => {
+  localStorage.clear();
+  Swal.fire({
+    icon: "error",
+    title: "세션이 만료되었어요!<br>다시 로그인 해주세요!",
+    confirmButtonText: "확인",
+  }).then(() => {
+    navigate("/");
+  });
 };
 
 export const checkPassword = async (navigate, pw) => {
@@ -85,22 +101,22 @@ export const checkPassword = async (navigate, pw) => {
     if(res.data.code === 200) {
       return res.data.data;
     }
-    else if(res.data.code === 401) {
-      await refreshAccessToken(navigate);
-      checkPassword(navigate, pw);
+
+    if (res.data.code === 401) {
+      // accessToken 만료 시도 -> refresh로 재발급
+      const refreshed = await refreshAccessToken(navigate);
+      if (refreshed) {
+        // 재시도
+        return checkPassword(navigate);
+      } else {
+        // refresh 실패 시 여기서 종료
+        return;
+      }
     }
-    else {
-      throw new Error('unknown Error');
-    }
+
   } catch (error) {
-    console.error(error);
-    Swal.fire({
-      position: "center",
-      icon: "error",
-      title: "에러!",
-      text: "서버와의 통신에 문제가 생겼어요!",
-      showConfirmButton: false,
-      timer: 1500
-  });
+    console.error("logout error", error);
+    // 네트워크 오류 등 서버 응답조차 없을 때도 세션 종료 처리
+    await forceLogout(navigate);
   }
 }
