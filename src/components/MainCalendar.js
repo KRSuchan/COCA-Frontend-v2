@@ -4,7 +4,7 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
-import { refreshAccessToken } from "../security/TokenManage";
+import { refreshAccessToken, forceLogout } from "../security/TokenManage";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -36,9 +36,18 @@ const getPersonalSchedule = async (id, startDate, endDate, navigate) => {
         if (res.data.code === 200) {
             return res.data.data;
         } else if (res.data.code === 401) {
-            await refreshAccessToken(navigate);
-            getPersonalSchedule(id, startDate, endDate, navigate);
+            // accessToken 만료 시도 -> refresh로 재발급
+            const refreshed = await refreshAccessToken(navigate);
+                if (refreshed) {
+                    return getPersonalSchedule(id, startDate, endDate, navigate);
+                } else {
+                    // refresh 실패 시 여기서 종료
+                    await forceLogout(navigate);
+                    return;
+                }
         } else {
+            // 네트워크 오류 등 서버 응답조차 없을 때도 세션 종료 처리
+            await forceLogout(navigate);
             throw new Error("unknown Error");
         }
     } catch (error) {
@@ -51,6 +60,7 @@ const getPersonalSchedule = async (id, startDate, endDate, navigate) => {
             showConfirmButton: false,
             timer: 1500,
         });
+        await forceLogout(navigate);
         return null;
     }
 };

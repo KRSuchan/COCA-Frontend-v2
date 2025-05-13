@@ -71,7 +71,7 @@ export const refreshAccessToken = async (navigate) => {
   }
 };
 
-const forceLogout = async (navigate) => {
+export const forceLogout = async (navigate) => {
   localStorage.clear();
   Swal.fire({
     icon: "error",
