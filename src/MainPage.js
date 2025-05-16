@@ -1,31 +1,14 @@
 import React from "react";
-import { createStore } from "redux";
-import { Provider, useSelector, useDispatch } from "react-redux";
-import { DatePicker, List } from "antd";
-import { Calendar, momentLocalizer } from "react-big-calendar";
+import { useSelector, useDispatch } from "react-redux";
+import { momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import {
-    CalendarOutlined,
-    LeftOutlined,
-    RightOutlined,
-    BellOutlined,
-} from "@ant-design/icons";
-import { Calendar as AntCalendar } from "antd";
+
 import "./css/MainPage.css";
 import "moment/locale/ko"; // Import Korean locale
 import { useState, useEffect } from "react";
-import RCalendar from "react-calendar";
+
 import "react-calendar/dist/Calendar.css";
-import { Button } from "antd";
-import {
-    SmileOutlined,
-    SearchOutlined,
-    StarOutlined,
-    SettingOutlined,
-    LogoutOutlined,
-} from "@ant-design/icons";
-import { ListGroup } from "react-bootstrap"; // React Bootstrap 라이브러리에서 ListGroup 컴포넌트를 가져옵니다.
 import MiniCalendar from "./components/MiniCalendar";
 import GroupsList from "./components/GroupsList";
 import MainCalendar from "./components/MainCalendar";
@@ -33,10 +16,8 @@ import NewPage from "./components/NewPage";
 import ButtonPanel from "./components/ButtonPanel";
 import AddSchedulePage from "./components/AddSchedulePage";
 import MainLogo from "./components/MainLogo";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { refreshAccessToken } from "./security/TokenManage";
-import Swal from "sweetalert2";
+import api from "./security/TokenManage";
 import { showLoginRequired } from "./security/ErrorController";
 
 moment.locale("ko");
@@ -46,45 +27,13 @@ const localizer = momentLocalizer(moment);
 
 // 일정 상세 통신
 const getPersonalDetailSchedule = async (id, startDate, endDate, navigate) => {
-    console.log(id, startDate, endDate);
-
-    const accessToken = localStorage.getItem("accessToken");
-
-    try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
-        const res = await axios.get(
-            process.env.REACT_APP_SERVER_URL +
-                `/api/personal-schedule/detail/date?memberId=${id}&date=${startDate}`,
-            config
-        );
-
-        console.log("res", res);
-
-        if (res.data.code === 200) {
-            return res.data;
-        } else if (res.data.code === 401) {
-            await refreshAccessToken(navigate);
-            getPersonalDetailSchedule(id, startDate, endDate, navigate);
-        } else {
-            throw new Error("unknown Error");
-        }
-    } catch (error) {
-        console.error("유저 상세 일정 불러오기 에러 : ", error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "에러!",
-            text: "서버와의 통신에 문제가 생겼어요!",
-            showConfirmButton: false,
-            timer: 1500,
-        });
-        return null;
-    }
+    const res = await api.get(
+        `/api/personal-schedule/detail/date?memberId=${id}&date=${startDate}`,
+        navigate
+    );
+    if (res.data.code === 200) {
+        return res.data;
+    } else return null;
 };
 
 const getGroupDetailSchedule = async (
@@ -93,58 +42,24 @@ const getGroupDetailSchedule = async (
     inquiryDate,
     navigate
 ) => {
-    const accessToken = localStorage.getItem("accessToken");
-
-    try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-            params: {
-                groupId: groupId,
-                memberId: memberId,
-                inquiryDate: inquiryDate,
-            },
-        };
-
-        const res = await axios.get(
-            process.env.REACT_APP_SERVER_URL +
-                `/api/group-schedule/groupScheduleSpecificReq`,
-            config
-        );
-        console.log("GRes", res);
-
-        if (res.data.code === 200) {
-            return res.data;
-        } else if (res.data.code === 401) {
-            await refreshAccessToken(navigate);
-            getGroupDetailSchedule(groupId, memberId, inquiryDate, navigate);
-        } else {
-            throw new Error("unknown Error");
-        }
-    } catch (error) {
-        console.error("그룹 상세 일정 불러오기 에러 :", error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "에러!",
-            text: "서버와의 통신에 문제가 생겼어요!",
-            showConfirmButton: false,
-            timer: 1500,
-        });
-        return null;
-    }
+    const res = await api.get(
+        `/api/group-schedule/groupScheduleSpecificReq`,
+        navigate
+    );
+    if (res.data.code === 200) {
+        return res.data;
+    } else return null;
 };
 
 // Define your updateDate action creator
-const updateDate = newDate => {
+const updateDate = (newDate) => {
     return {
         type: "UPDATE_DATE",
         payload: newDate,
     };
 };
 
-const setGroups = groups => {
+const setGroups = (groups) => {
     return {
         type: "SET_GROUPS",
         payload: groups,
@@ -152,43 +67,10 @@ const setGroups = groups => {
 };
 
 const getGroupList = async (id, navigate) => {
-    const accessToken = localStorage.getItem("accessToken");
-
-    try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
-        const res = await axios.get(
-            process.env.REACT_APP_SERVER_URL + `/api/calendar/member/${id}`,
-            config
-        );
-
-        console.log("list", res.data.data);
-
-        if (res.data.code === 200) {
-            return res.data.data;
-        } else if (res.data.code === 401 || res.data.data === null) {
-            await refreshAccessToken(navigate);
-            getGroupList(id, navigate);
-        } else {
-            throw new Error("unknown Error");
-        }
-    } catch (error) {
-        console.error(error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "에러!",
-            text: "서버와의 통신에 문제가 생겼어요!",
-            showConfirmButton: false,
-            timer: 1500,
-        });
-
-        return [];
-    }
+    const res = await api.get(`/api/calendar/member/${id}`, navigate);
+    if (res.data.code === 200) {
+        return res.data.data;
+    } else return [];
 };
 
 function MainPage() {
@@ -209,7 +91,7 @@ function MainPage() {
     const [schedule, setSchedule] = useState();
 
     const dispatch = useDispatch();
-    const groups = useSelector(state => state.groups);
+    const groups = useSelector((state) => state.groups);
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -223,10 +105,10 @@ function MainPage() {
         fetchGroups();
     }, [dispatch]);
 
-    const selectedGroup = useSelector(state => state.selectedGroup);
+    const selectedGroup = useSelector((state) => state.selectedGroup);
 
     // ✅ 캘린더 슬롯 선택시!
-    const onSlotSelect = async date => {
+    const onSlotSelect = async (date) => {
         setSelectedDate(date); // 선택한 날짜를 상태로 저장
 
         console.log(date);
@@ -249,7 +131,7 @@ function MainPage() {
                     navigate
                 );
 
-                res.data = res.data.map(item => {
+                res.data = res.data.map((item) => {
                     return {
                         ...item,
                         id: item.scheduleId,

@@ -4,65 +4,22 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
-import { refreshAccessToken, forceLogout } from "../security/TokenManage";
+import api from "../security/TokenManage";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 moment.locale("ko");
 
-// test355
-// test45
-
-// Create the localizer
 const localizer = momentLocalizer(moment);
 
-// 메인페이지 일정 정보 통신 d
+// 메인페이지 일정 정보 통신
 const getPersonalSchedule = async (id, startDate, endDate, navigate) => {
     console.log("Get Personal Schedule");
-    const accessToken = localStorage.getItem("accessToken");
-
-    try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
-        const res = await axios.get(
-            process.env.REACT_APP_SERVER_URL +
-                `/api/personal-schedule/summary/between-dates?memberId=${id}&startDate=${startDate}&endDate=${endDate}`,
-            config
-        );
-        if (res.data.code === 200) {
-            return res.data.data;
-        } else if (res.data.code === 401) {
-            // accessToken 만료 시도 -> refresh로 재발급
-            const refreshed = await refreshAccessToken(navigate);
-                if (refreshed) {
-                    return getPersonalSchedule(id, startDate, endDate, navigate);
-                } else {
-                    // refresh 실패 시 여기서 종료
-                    await forceLogout(navigate);
-                    return;
-                }
-        } else {
-            // 네트워크 오류 등 서버 응답조차 없을 때도 세션 종료 처리
-            await forceLogout(navigate);
-            throw new Error("unknown Error");
-        }
-    } catch (error) {
-        console.error("유저 일정 불러오기 에러 : ", error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "에러!",
-            text: "서버와의 통신에 문제가 생겼어요!",
-            showConfirmButton: false,
-            timer: 1500,
-        });
-        await forceLogout(navigate);
-        return null;
-    }
+    const res = await api.get(
+        `/api/personal-schedule/summary/between-dates?memberId=${id}&startDate=${startDate}&endDate=${endDate}`,
+        navigate
+    );
+    if (res) return res.data.data;
 };
 
 const getGroupScehdule = async (
@@ -96,7 +53,7 @@ const getGroupScehdule = async (
         if (res.data.code === 200) {
             return res.data.data;
         } else if (res.data.code === 401) {
-            await refreshAccessToken(navigate);
+            await api.refreshAccessToken(navigate);
             getGroupScehdule(groupId, memberId, startDate, endDate, navigate);
         } else {
             throw new Error("unknown Error");
@@ -117,7 +74,7 @@ const getGroupScehdule = async (
 
 const MainCalendar = ({ onSlotSelect }) => {
     const navigate = useNavigate();
-    const selectedGroup = useSelector(state => state.selectedGroup);
+    const selectedGroup = useSelector((state) => state.selectedGroup);
     const [currentGroup, setCurrentGroup] = useState(
         selectedGroup || { groupId: -1 }
     );
@@ -132,7 +89,7 @@ const MainCalendar = ({ onSlotSelect }) => {
 
     const [events, setEvents] = useState();
 
-    const handleNavigate = async date => {
+    const handleNavigate = async (date) => {
         localStorage.setItem("savedDate", date);
 
         const currentYear = date.getFullYear();
@@ -172,23 +129,23 @@ const MainCalendar = ({ onSlotSelect }) => {
         handleData(data);
     };
 
-    const darkenColor = color => {
+    const darkenColor = (color) => {
         // color 값이 #으로 시작하는지 확인
         if (color.startsWith("#")) {
             // 시작하면 진행
             var rgb = color
                 .substring(1) // # 제거
                 .match(/.{1,2}/g) // 2자리씩 나눔
-                .map(component => parseInt(component, 16)); // 16진수로 변환
+                .map((component) => parseInt(component, 16)); // 16진수로 변환
 
             // 어두운 색상을 위해 RGB 값에 각각 20씩 감소시킴
-            var darkerRgb = rgb.map(component => Math.max(component - 20, 0));
+            var darkerRgb = rgb.map((component) => Math.max(component - 20, 0));
 
             // 감소된 RGB 값을 다시 16진수로 변환하여 새로운 색상 생성
             var darkerColor =
                 "#" +
                 darkerRgb
-                    .map(component => component.toString(16).padStart(2, "0"))
+                    .map((component) => component.toString(16).padStart(2, "0"))
                     .join("");
             return darkerColor;
         } else {
@@ -196,9 +153,9 @@ const MainCalendar = ({ onSlotSelect }) => {
         }
     };
 
-    const handleData = data => {
+    const handleData = (data) => {
         if (data) {
-            const formattedEvents = data.map(item => {
+            const formattedEvents = data.map((item) => {
                 const eventStartMonth = new Date(item.startTime).getMonth();
                 const eventEndMonth = new Date(item.endTime).getMonth();
                 const savedMonth = new Date(localStorageDate).getMonth();
@@ -242,8 +199,8 @@ const MainCalendar = ({ onSlotSelect }) => {
     }, [currentGroup]);
 
     // 선택한 날짜에 대한 이벤트를 찾는 함수
-    const findEventsForSelectedDate = date => {
-        return events.filter(event => {
+    const findEventsForSelectedDate = (date) => {
+        return events.filter((event) => {
             const eventStart = new Date(event.start).setHours(0, 0, 0, 0);
             const eventEnd = new Date(event.end).setHours(0, 0, 0, 0);
             const selectedDate = new Date(date).setHours(0, 0, 0, 0);
@@ -256,7 +213,7 @@ const MainCalendar = ({ onSlotSelect }) => {
     // };
 
     // 캘린더 슬롯 선택시 메인페이지의 메소드 실행함
-    const handleSelectSlot = slotInfo => {
+    const handleSelectSlot = (slotInfo) => {
         // 선택한 슬롯의 시작 날짜를 YYYY-MM-DD 형식의 문자열로 변환
         const startDate = slotInfo.end.toISOString().split("T")[0];
         onSlotSelect(startDate); // 날짜 정보를 인자로 전달

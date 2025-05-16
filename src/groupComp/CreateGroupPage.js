@@ -1,9 +1,8 @@
 // CreateGroupPage.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import styles from "../css/GroupPage.module.css";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { refreshAccessToken } from "../security/TokenManage";
+import api from "../security/TokenManage";
 import Swal from "sweetalert2";
 
 const CreateGroupPage = () => {
@@ -19,29 +18,17 @@ const CreateGroupPage = () => {
 
     const navigate = useNavigate();
 
-    // 백엔드에서 관심분야 목록을 가져오는 함수
     const fetchInterestOptions = async () => {
-        // 백엔드 API 호출 로직 구현 예정
-
-        try {
-            const res = await axios.get(
-                process.env.REACT_APP_SERVER_URL + "/api/tag/all"
-            );
-
-            console.log("tag", res.data);
-
-            return res.data;
-        } catch (error) {
-            console.error(error);
-            return null;
-        }
+        const res = await api.get("/api/tag/all", navigate);
+        console.log("tag", res.data);
+        return res.data;
     };
 
     useEffect(() => {
-        fetchInterestOptions().then(response => {
+        fetchInterestOptions().then((response) => {
             if (response.code === 200) {
-                setInterestOptions(response.data.map(option => option.name));
-                setTags(response.data.map(option => option));
+                setInterestOptions(response.data.map((option) => option.name));
+                setTags(response.data.map((option) => option));
             } else {
                 console.error("관심분야 정보를 가져오는데 실패했습니다.");
             }
@@ -59,9 +46,9 @@ const CreateGroupPage = () => {
                 privatePassword: isPrivate ? privatePassword : null, // 비공개 그룹일 경우 비밀번호 추가
             },
             groupTags: interests
-                .filter(interest => interest)
-                .map(interest => {
-                    const tag = tags.find(option => option.name === interest);
+                .filter((interest) => interest)
+                .map((interest) => {
+                    const tag = tags.find((option) => option.name === interest);
                     console.log(tags);
                     console.log("tagg", tag);
                     return {
@@ -74,46 +61,24 @@ const CreateGroupPage = () => {
                 }),
         };
 
-        const accessToken = localStorage.getItem("accessToken");
-
-        try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            };
-            const res = await axios.post(
-                process.env.REACT_APP_SERVER_URL + "/api/group/add",
-                groupData,
-                config
-            );
-
-            console.log(res);
-
-            if (res.data.code === 201) {
-                Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: "생성 완료",
-                    text: "성공적으로 그룹을 생성했어요!",
-                    showConfirmButton: false,
-                    timer: 1500,
-                }).then(res => {
-                    navigate("/main");
-                });
-            } else if (res.data.code === 401) {
-                await refreshAccessToken(navigate);
-                createGroupAxios();
-            } else {
-                throw new Error("unknown Error");
-            }
-        } catch (error) {
-            console.error(error);
+        const res = await api.post("/api/group/add", groupData, navigate);
+        if (res) {
+            Swal.fire({
+                position: "center",
+                icon: "success",
+                title: "생성 완료",
+                text: "성공적으로 그룹을 생성했어요!",
+                showConfirmButton: false,
+                timer: 1500,
+            }).then((res) => {
+                navigate("/main");
+            });
+        } else {
             Swal.fire({
                 position: "center",
                 icon: "error",
-                title: "에러!",
-                text: "서버와의 통신에 문제가 생겼어요!",
+                title: "오류",
+                text: "그룹 생성이 정상적으로 작동하지 않았습니다.",
                 showConfirmButton: false,
                 timer: 1500,
             });
@@ -145,13 +110,13 @@ const CreateGroupPage = () => {
                     type="text"
                     placeholder="그룹 이름"
                     value={groupName}
-                    onChange={e => setGroupName(e.target.value)}
+                    onChange={(e) => setGroupName(e.target.value)}
                     className={styles.input}
                 />
                 <textarea
                     placeholder="그룹 설명"
                     value={groupDescription}
-                    onChange={e => setGroupDescription(e.target.value)}
+                    onChange={(e) => setGroupDescription(e.target.value)}
                     className={styles.textarea}
                 />
                 {/* 매니저 입력 필드 주석 처리
@@ -176,18 +141,19 @@ const CreateGroupPage = () => {
                     <select
                         key={index}
                         value={interest}
-                        onChange={e =>
+                        onChange={(e) =>
                             handleInterestChange(index, e.target.value)
                         }
-                        className={styles.select}>
+                        className={styles.select}
+                    >
                         <option value="">관심분야 선택</option>
                         {interestOptions
                             .filter(
-                                option =>
+                                (option) =>
                                     !interests.includes(option) ||
                                     option === interest
                             )
-                            .map(option => (
+                            .map((option) => (
                                 <option key={option} value={option}>
                                     {option}
                                 </option>
@@ -200,11 +166,12 @@ const CreateGroupPage = () => {
                         backgroundColor: "#f2f2f2",
                         padding: "10px",
                         borderRadius: "5px",
-                    }}>
+                    }}
+                >
                     <input
                         type="checkbox"
                         checked={isPrivate}
-                        onChange={e => {
+                        onChange={(e) => {
                             setIsPrivate(e.target.checked);
                             if (!e.target.checked) {
                                 setPrivatePassword("");
@@ -223,7 +190,8 @@ const CreateGroupPage = () => {
                             fontWeight: "bold",
                             fontSize: "16px",
                             color: "#333",
-                        }}>
+                        }}
+                    >
                         {isPrivate ? "  비공개 그룹🔒" : "  공개 그룹🔓"}으로
                         그룹을 생성합니다.
                     </label>
@@ -233,7 +201,7 @@ const CreateGroupPage = () => {
                         type="password"
                         placeholder="비밀번호"
                         value={privatePassword}
-                        onChange={e => {
+                        onChange={(e) => {
                             setPrivatePassword(e.target.value);
                             setIsPasswordRequired(false);
                         }}

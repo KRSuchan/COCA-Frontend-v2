@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { Button } from "antd";
-import { UserOutlined, LeftOutlined, EditOutlined } from "@ant-design/icons"; // 아이콘 추가
+import { useEffect, useState } from "react";
+import { UserOutlined, EditOutlined } from "@ant-design/icons"; // 아이콘 추가
 import styles from "./css/SettingPage.module.css"; // 스타일 시트 임포트
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { refreshAccessToken } from "./security/TokenManage";
 import { showLoginRequired } from "./security/ErrorController";
+import api from "./security/TokenManage";
 
 const SettingPage = () => {
     useEffect(() => {
@@ -50,7 +50,7 @@ const SettingPage = () => {
     // handleInterestChange : 관심사 선택 동작
     const handleInterestChange = (index, event) => {
         const value = event.target.value;
-        setInterests(prevInterests => {
+        setInterests((prevInterests) => {
             const newInterests = [...prevInterests];
             newInterests[index] = value;
             return newInterests;
@@ -60,15 +60,8 @@ const SettingPage = () => {
     const [tagList, setTagList] = useState([]);
 
     const fetchTagList = async () => {
-        try {
-            const res = await axios.get(
-                process.env.REACT_APP_SERVER_URL + "/api/tag/all"
-            );
-            console.log(res.data);
-            return res.data;
-        } catch (error) {
-            console.error(error);
-        }
+        const res = await api.get("/api/tag/all", navigate);
+        return res.data;
     };
 
     useEffect(() => {
@@ -80,16 +73,16 @@ const SettingPage = () => {
                 text: "잘못된 접근이에요!",
                 showConfirmButton: false,
                 timer: 1500,
-            }).then(res => {
+            }).then((res) => {
                 navigate("/main");
             });
         }
     });
 
     useEffect(() => {
-        fetchTagList().then(res => {
+        fetchTagList().then((res) => {
             if (res.code === 200) {
-                setTagList(res.data.map(option => option));
+                setTagList(res.data.map((option) => option));
             } else {
                 console.error("태그 정보 가져오기 실패");
             }
@@ -104,7 +97,7 @@ const SettingPage = () => {
     const navigate = useNavigate();
 
     // handleProfileImageChange : 프로필 사진 변경 탐색 버튼 동작
-    const handleProfileImageChange = e => {
+    const handleProfileImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
@@ -128,7 +121,7 @@ const SettingPage = () => {
         setIsEditingProfile(false);
         setProfileImage(null);
         setProfileImageFile(null);
-        setUserInfo(prevState => ({
+        setUserInfo((prevState) => ({
             ...prevState,
             profileImgPath: originalProfileImgPath,
         }));
@@ -136,41 +129,16 @@ const SettingPage = () => {
 
     // fetchUserInfo : 회원 정보 조회 api 요청
     const fetchUserInfo = async () => {
-        const accessToken = localStorage.getItem("accessToken");
-        try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            };
-            const res = await axios.post(
-                process.env.REACT_APP_SERVER_URL +
-                    "/api/member/memberInfoInquiryReq",
-                {
-                    id: state.id,
-                    password: state.password,
-                },
-                config
-            );
-            console.log(res);
-            if (res.data.code === 200) {
-                return res.data.data;
-            } else if (res.data.code === 401) {
-                await refreshAccessToken(navigate);
-                fetchUserInfo();
-            } else {
-                throw new Error("unknown Error");
-            }
-        } catch (error) {
-            console.log(error);
-            Swal.fire({
-                position: "center",
-                icon: "error",
-                title: "에러!",
-                text: "서버와의 통신에 문제가 생겼어요!",
-                showConfirmButton: false,
-                timer: 1500,
-            });
+        const res = await api.post(
+            "/api/member/memberInfoInquiryReq",
+            {
+                id: state.id,
+                password: state.password,
+            },
+            navigate
+        );
+        if (res.data.code === 200) {
+            return res.data.data;
         }
     };
     // updateMember : 회원 정보 수정 api 요청
@@ -179,12 +147,12 @@ const SettingPage = () => {
         try {
             let data = userInfo;
             const interestData = interests
-                .filter(item => item !== "")
-                .map(item => {
-                    const tag = tagList.find(tag => tag.name === item);
+                .filter((item) => item !== "")
+                .map((item) => {
+                    const tag = tagList.find((tag) => tag.name === item);
                     return tag ? { tagId: tag.id, TagName: tag.name } : null;
                 })
-                .filter(tag => tag !== null);
+                .filter((tag) => tag !== null);
             if (userInfo.password === "") {
                 console.log("pw blanked");
                 data = {
@@ -265,7 +233,7 @@ const SettingPage = () => {
             showCancelButton: true,
             confirmButtonText: "수정",
             cancelButtonText: "취소",
-        }).then(async res => {
+        }).then(async (res) => {
             if (res.isConfirmed) {
                 const res = await updateMember();
                 if (res) {
@@ -296,40 +264,17 @@ const SettingPage = () => {
             }
         });
     };
-    // deleteMember : axios -> 회원 탈퇴 api 요청
-    const deleteMember = async password => {
-        console.log("탈퇴 처리");
-        const accessToken = localStorage.getItem("accessToken");
-        try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            };
-            const res = await axios.post(
-                process.env.REACT_APP_SERVER_URL + "/api/member/withdrawalReq",
-                {
-                    id: userInfo.id,
-                    password: password,
-                },
-                config
-            );
-            console.log(res);
-            if (res.data.data) {
-                return res.data.data;
-            } else if (res.data.code === 401) {
-                await refreshAccessToken(navigate);
-                deleteMember();
-            }
-        } catch (error) {
-            Swal.fire({
-                position: "center",
-                icon: "error",
-                title: "에러!",
-                text: "서버와의 통신에 문제가 생겼어요!",
-                showConfirmButton: false,
-                timer: 1500,
-            });
+    const deleteMember = async (password) => {
+        const res = await api.post(
+            "/api/member/withdrawalReq",
+            {
+                id: userInfo.id,
+                password: password,
+            },
+            navigate
+        );
+        if (res.data.data) {
+            return res.data.data;
         }
     };
     // handleDelete : 회원 탈퇴 버튼 동작
@@ -344,14 +289,14 @@ const SettingPage = () => {
             confirmButtonText: "탈퇴",
             cancelButtonText: "취소",
             showLoaderOnConfirm: true,
-            preConfirm: async password => {
+            preConfirm: async (password) => {
                 const res = await deleteMember(password);
                 if (!res) {
                     return Swal.showValidationMessage("비밀번호가 달라요!");
                 }
                 return res;
             },
-        }).then(async res => {
+        }).then(async (res) => {
             if (res.isConfirmed) {
                 localStorage.clear();
                 Swal.fire({
@@ -389,9 +334,9 @@ const SettingPage = () => {
                 password: "",
                 userName: res.userName,
                 profileImgPath: res.profileImgPath,
-                interest: res.interest.map(item => item.tagName),
+                interest: res.interest.map((item) => item.tagName),
             });
-            setInterests(res.interest.map(item => item.tagName));
+            setInterests(res.interest.map((item) => item.tagName));
         };
         fetchData();
     }, []);
@@ -422,7 +367,8 @@ const SettingPage = () => {
                     )}
                     <div
                         className={styles.editIcon}
-                        onClick={handleProfileEditClick}>
+                        onClick={handleProfileEditClick}
+                    >
                         <EditOutlined style={{ fontSize: "24px" }} />
                     </div>
                     {isEditingProfile && (
@@ -443,7 +389,7 @@ const SettingPage = () => {
                     <input
                         type="text"
                         value={userInfo.userName}
-                        onChange={e =>
+                        onChange={(e) =>
                             setUserInfo({
                                 ...userInfo,
                                 userName: e.target.value,
@@ -457,7 +403,7 @@ const SettingPage = () => {
                     <input
                         type="password"
                         value={userInfo.password}
-                        onChange={e =>
+                        onChange={(e) =>
                             setUserInfo({
                                 ...userInfo,
                                 password: e.target.value,
@@ -474,18 +420,19 @@ const SettingPage = () => {
                             id={`interest-${index}`}
                             style={{ marginRight: "10px" }}
                             value={interest}
-                            onChange={e => handleInterestChange(index, e)}
-                            required>
+                            onChange={(e) => handleInterestChange(index, e)}
+                            required
+                        >
                             <option value="" disabled>
                                 선택하세요
                             </option>
                             {tagList
                                 .filter(
-                                    tag =>
+                                    (tag) =>
                                         !interests.includes(tag.name) ||
                                         tag.name === interest
                                 )
-                                .map(tag => (
+                                .map((tag) => (
                                     <option key={tag.id} value={tag.name}>
                                         {tag.name}
                                     </option>
@@ -496,12 +443,14 @@ const SettingPage = () => {
                 <div className={styles.buttonContainer}>
                     <button
                         className={styles.updateButton}
-                        onClick={handleUpdate}>
+                        onClick={handleUpdate}
+                    >
                         변경
                     </button>
                     <button
                         className={styles.deleteButton}
-                        onClick={handleDelete}>
+                        onClick={handleDelete}
+                    >
                         탈퇴
                     </button>
                 </div>

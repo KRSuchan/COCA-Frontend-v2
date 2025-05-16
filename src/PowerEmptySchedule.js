@@ -1,16 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import styles from "./css/PowerEmptySchedule.module.css";
 import { useNavigate } from "react-router-dom";
 import {
-  DatePicker,
-  InputNumber,
-  Select,
-  Button,
-  Input,
-  Modal,
-  Tabs,
-  List,
-  Avatar,
+    DatePicker,
+    InputNumber,
+    Select,
+    Button,
+    Modal,
+    Tabs,
+    List,
+    Avatar,
 } from "antd";
 import FullCalendar from "@fullcalendar/react";
 import resourceTimelinePlugin from "@fullcalendar/resource-timeline";
@@ -18,10 +17,9 @@ import moment from "moment";
 import koLocale from "@fullcalendar/core/locales/ko"; // 한국어 로케일 추가
 import { UserOutlined } from "@ant-design/icons"; // antd 아이콘 추가
 import Swal from "sweetalert2"; // Swal 추가
-import axios from "axios";
-import { refreshAccessToken } from "./security/TokenManage";
 import { useSelector } from "react-redux";
 import { showLoginRequired } from "./security/ErrorController";
+import api from "./security/TokenManage";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -35,1024 +33,969 @@ const { TabPane } = Tabs;
 // 🍀 handleEventClick 일정 클릭시 일정 추가 모달창 띄우고 제목, 내용, 시작시간, 종료시간 입력 가능하고 저장하면 일정 추가됨
 
 const PowerEmptySchedule = () => {
-  useEffect(() => {
-    const id = localStorage.getItem("userId");
-    if (id === null) {
-      showLoginRequired(navigate);
-    }
-  }, []);
-  const navigate = useNavigate();
-  const calendarRef = useRef(null);
-  const [isModalVisible, setIsModalVisible] = useState(false); // 모달 상태
+    useEffect(() => {
+        const id = localStorage.getItem("userId");
+        if (id === null) {
+            showLoginRequired(navigate);
+        }
+    }, []);
+    const navigate = useNavigate();
+    const calendarRef = useRef(null);
+    const [isModalVisible, setIsModalVisible] = useState(false); // 모달 상태
 
-  // ✌️✌️✌️ 상단 검색 조건 상태들
-  const [number, setNumber] = useState(1); // 숫자 (N) -> 일 및 시간
-  const [minute, setMinute] = useState(10); // 분
-  const [unit, setUnit] = useState("일"); // '일', '시간', '분'
-  const [range, setRange] = useState(null); //시작일 끝일
-  const [members, setMembers] = useState([
-    { id: localStorage.getItem('userId'), name: localStorage.getItem('userId'), photo: 'https://cocaattachments.s3.amazonaws.com/DEFAULT_PROFILE_IMG.jpg' }
-  ]); // 기존 멤버 상태
-
-  // ✌️✌️✌️ 일정 상태들
-  const [schedules, setSchedules] = useState([]); // 각 멤버들의 일정
-  const [emptySchedules, setEmptySchedules] = useState([]); // 빈일정
-
-  // ✌️✌️✌️ 멤버 추가 버튼 눌렀을때 관리하는 상태들 (모달창)
-  const [friends, setFriends] = useState([]); // 친구 목록 상태
-  const [selectedFriend, setSelectedFriend] = useState(null); // 선택된 친구 상태
-  const groups = useSelector(state => state.groups);
-  const [groupMembers, setGroupMembers] = useState([]); // 선택된 그룹의 멤버 목록
-  const [selectedGroup, setSelectedGroup] = useState(null); // 선택된 그룹
-
-  const fetchFriendList = async () => {
-    const accessToken = localStorage.getItem("accessToken");
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+    // ✌️✌️✌️ 상단 검색 조건 상태들
+    const [number, setNumber] = useState(1); // 숫자 (N) -> 일 및 시간
+    const [minute, setMinute] = useState(10); // 분
+    const [unit, setUnit] = useState("일"); // '일', '시간', '분'
+    const [range, setRange] = useState(null); //시작일 끝일
+    const [members, setMembers] = useState([
+        {
+            id: localStorage.getItem("userId"),
+            name: localStorage.getItem("userId"),
+            photo: "https://cocaattachments.s3.amazonaws.com/DEFAULT_PROFILE_IMG.jpg",
         },
-      };
-      const res = await axios.get(
-        process.env.REACT_APP_SERVER_URL +
-          `/api/friend/list/memberId/${localStorage.getItem("userId")}`,
-        config
-      );
+    ]); // 기존 멤버 상태
 
-      console.log(res);
+    // ✌️✌️✌️ 일정 상태들
+    const [schedules, setSchedules] = useState([]); // 각 멤버들의 일정
+    const [emptySchedules, setEmptySchedules] = useState([]); // 빈일정
 
-      if (res.data.code === 200) {
-        return res.data.data; // 수정된 부분
-      } else if (res.data.code === 401) {
-        await refreshAccessToken(navigate);
-        fetchFriendList();
-      } else {
-        throw new Error("unknown Error");
-      }
-    } catch (error) {
-      console.log(error);
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "에러!",
-        text: "서버와의 통신에 문제가 생겼어요!",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
-  };
+    // ✌️✌️✌️ 멤버 추가 버튼 눌렀을때 관리하는 상태들 (모달창)
+    const [friends, setFriends] = useState([]); // 친구 목록 상태
+    const [selectedFriend, setSelectedFriend] = useState(null); // 선택된 친구 상태
+    const groups = useSelector((state) => state.groups);
+    const [groupMembers, setGroupMembers] = useState([]); // 선택된 그룹의 멤버 목록
+    const [selectedGroup, setSelectedGroup] = useState(null); // 선택된 그룹
 
-  useEffect(() => {
-    // 친구 목록을 받아오는 함수
-    const fetchFriends = async () => {
-      let data = await fetchFriendList();
-      data = data.map(item => ({ ...item, friendId: item.friendMemberId }));
-      setFriends(data); // 수정된 부분
-    };
-
-    fetchFriends();
-  }, []);
-
-  const fetchGroupMembers = async group => {
-    const accessToken = localStorage.getItem("accessToken");
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      };
-
-      const res = await axios.get(
-        process.env.REACT_APP_SERVER_URL +
-          `/api/group/list/members/member/${localStorage.getItem(
-            "userId"
-          )}/group/${group.groupId}`,
-        config
-      );
-
-      console.log(res);
-
-      if (res.data.code === 200) {
-        return res.data.data; // 수정된 부분
-      } else if (res.data.code === 401) {
-        await refreshAccessToken(navigate);
-        fetchGroupMembers(group);
-      } else {
-        throw new Error("unknown Error");
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "에러!",
-        text: "서버와의 통신에 문제가 생겼어요!",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-    }
-  };
-
-  useEffect(() => {
-    // 선택된 그룹의 멤버 목록을 받아오는 함수
-    const getGroupMembers = async () => {
-      if (selectedGroup) {
-        console.log(selectedGroup);
-        const data = await fetchGroupMembers(selectedGroup);
-        const membersData = [
-          { id: "TESTID1", userName: "TESTNAME1", profileImgPath: "TESTURL1" },
-        ];
-        // setGroupMembers(membersData);
-        setGroupMembers(data);
-      }
-    };
-
-    getGroupMembers();
-  }, [selectedGroup]);
-
-  const handleBack = () => {
-    navigate(-1);
-  };
-
-  const handleNumberChange = value => {
-    setNumber(value);
-  };
-
-  const handleMinuteChange = value => {
-    setMinute(value);
-  };
-
-  const handleUnitChange = value => {
-    setUnit(value);
-  };
-
-  const handleRangeChange = dates => {
-    setRange(dates);
-  };
-
-  const getMembersSchedules = async () => {
-    const accessToken = localStorage.getItem("accessToken");
-
-    try {
-      if (range === null) {
-        Swal.fire({
-          position: "center",
-          icon: "error",
-          title: "에러!",
-          text: "검색일을 지정해주세요!",
-          showConfirmButton: false,
-          timer: 1500,
-        });
-
-        return;
-      }
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      };
-
-      const memberData = members.map(item => item.id);
-
-      const data = {
-        members: memberData,
-        startDate: formatDate(range[0].$d),
-        endDate: formatDate(range[1].$d),
-        findDay: null,
-        findMinute: null,
-      };
-
-      console.log("data", data);
-
-      const res = await axios.post(
-        process.env.REACT_APP_SERVER_URL +
-          "/api/commonscheduleController/memberScheduleReq",
-        data,
-        config
-      );
-
-      console.log("mem", res);
-
-      if (res.data.code === 200) {
-        return res.data.data;
-      } else if (res.data.code === 401) {
-        await refreshAccessToken(navigate);
-        getMembersSchedules();
-      } else {
-        throw new Error("unknown Error");
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "에러!",
-        text: "서버와의 통신에 문제가 생겼어요!",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      return [];
-    }
-  };
-
-  const getEmptySchedules = async () => {
-    const accessToken = localStorage.getItem("accessToken");
-
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      };
-
-      if (range === null) {
-        Swal.fire({
-          position: "center",
-          icon: "error",
-          title: "에러!",
-          text: "검색일을 지정해주세요!",
-          showConfirmButton: false,
-          timer: 1500,
-        });
-
-        return;
-      }
-
-      const memberData = members.map(item => item.id);
-
-      let data;
-      if (unit === "일") {
-        data = {
-          members: memberData,
-          startDate: formatDate(range[0].$d),
-          endDate: formatDate(range[1].$d),
-          findDay: number,
-          findMinute: 0,
-        };
-      } else if (unit === "시간") {
-        data = {
-          members: memberData,
-          startDate: formatDate(range[0].$d),
-          endDate: formatDate(range[1].$d),
-          findDay: 0,
-          findMinute: number * 60,
-        };
-      } else if (unit === "분") {
-        data = {
-          members: memberData,
-          startDate: formatDate(range[0].$d),
-          endDate: formatDate(range[1].$d),
-          findDay: 0,
-          findMinute: number * 60 + minute,
-        };
-      } else {
-        throw new Error("type mismatch");
-      }
-
-      console.log("data", data);
-      console.log("toDate", range[0].toDate());
-
-      const res = await axios.post(
-        process.env.REACT_APP_SERVER_URL +
-          "/api/commonscheduleController/findEmptyScheduleReq",
-        data,
-        config
-      );
-
-      console.log(res);
-
-      if (res.data.code === 200) {
-        return res.data.data;
-      } else if (res.data.code === 401) {
-        await refreshAccessToken(navigate);
-        getEmptySchedules();
-      } else {
-        throw new Error("unknown Error");
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "에러!",
-        text: "서버와의 통신에 문제가 생겼어요!",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-      return [];
-    }
-  };
-
-  const formatDate = dateString => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    // getMonth()는 0부터 시작하므로 1을 더해준다. 월이 한 자리수일 때 앞에 '0'을 붙여준다.
-    const month = ("0" + (date.getMonth() + 1)).slice(-2);
-    // getDate()는 날짜를 반환한다. 일이 한 자리수일 때 앞에 '0'을 붙여준다.
-    const day = ("0" + date.getDate()).slice(-2);
-
-    return `${year}-${month}-${day}`;
-  };
-
-  const handleSearch = async () => {
-    //✌️찾기버튼 눌렀을떄! unit에서 일인지 시간인지 분인지 확인해야 함.
-    // console.log(formatDate(range));
-
-    // 일정 데이터를 받아옴. -> 각자 개인 일정?
-    const fetchSchedules = async () => {
-      const data = [
-        [
-          { startTime: "2024-05-01", endTime: "2024-07-02" },
-          { startTime: "2024-07-10", endTime: "2024-08-02" },
-          { startTime: "2024-09-21", endTime: "2024-12-31" },
-          { startTime: "2025-01-01", endTime: "2025-03-31" },
-          { startTime: "2025-04-01", endTime: "2025-06-30" },
-        ],
-        [
-          { startTime: "2024-06-01", endTime: "2024-08-01" },
-          { startTime: "2024-08-10", endTime: "2024-10-20" },
-          { startTime: "2024-10-21", endTime: "2025-01-31" },
-          { startTime: "2025-02-01", endTime: "2025-04-30" },
-          { startTime: "2025-05-01", endTime: "2025-07-30" },
-        ],
-        [
-          { startTime: "2024-06-01", endTime: "2024-08-01" },
-          { startTime: "2024-08-11", endTime: "2024-10-20" },
-          { startTime: "2024-10-21", endTime: "2025-01-31" },
-          { startTime: "2025-02-01", endTime: "2025-04-30" },
-          { startTime: "2025-05-01", endTime: "2025-07-30" },
-        ],
-      ];
-      setSchedules(data);
-    };
-
-    // 빈일정 데이터를 받아오는 함수 -> 빈 일정
-    const fetchEmptySchedules = async () => {
-      const emptyData = [
-        { startTime: "2024-08-02", endTime: "2024-08-06" },
-        { startTime: "2024-08-03", endTime: "2024-08-07" },
-        { startTime: "2024-08-04", endTime: "2024-08-08" },
-        { startTime: "2024-08-05", endTime: "2024-08-09" },
-        { startTime: "2024-08-06", endTime: "2024-08-10" },
-      ];
-
-      const data = await getEmptySchedules();
-      setEmptySchedules(data);
-
-      console.log(emptySchedules);
-    };
-
-    // await fetchSchedules();
-
-    const emptyScheduleData = await getEmptySchedules();
-    setEmptySchedules(emptyScheduleData);
-
-    const memberScheduleData = await getMembersSchedules();
-    if (memberScheduleData) {
-      const memberSchedule = memberScheduleData.map(item => item.scheduleList);
-      console.log(memberSchedule);
-      setSchedules(memberSchedule);
-    }
-
-    if (range && range.length === 2) {
-      // 검색 조건이 선택된 경우
-      const calendarApi = calendarRef.current.getApi();
-      const startDate = range[0].toDate();
-      const endDate = range[1].toDate();
-      const duration = moment(endDate).diff(moment(startDate), "months") + 1; // 월 단위로 계산
-
-      calendarApi.gotoDate(startDate); // 선택된 범위의 시작 날짜로 이동
-
-      // FullCalendar의 view를 업데이트
-      if (unit === "일") {
-        calendarApi.changeView("customRange", {
-          duration: { months: 3 },
-          visibleRange: {
-            start: startDate,
-            end: endDate,
-          },
-        });
-      } else if (unit === "시간") {
-        calendarApi.changeView("customHourRange", {
-          duration: { hours: 430 }, // 49주를 일수로 변환
-          visibleRange: {
-            start: startDate,
-          },
-          slotLabelFormat: [
-            { month: "short", day: "numeric", weekday: "short" }, // 상위 레벨: 월, , 요일
-            { hour: "2-digit", minute: "2-digit", hour12: false }, // 하위 레벨: 시간
-          ],
-        });
-      } else if (unit === "분") {
-        calendarApi.changeView("customMinuteRange", {
-          duration: { hours: 430 }, // 2일을 분으로 변환
-          visibleRange: {
-            start: startDate,
-          },
-          slotLabelFormat: [
-            { month: "short", day: "numeric", weekday: "short" }, // 상위 레벨: 월, , 요일
-            { hour: "2-digit", minute: "2-digit", hour12: false }, // 하위 레벨: 시간
-          ],
-        });
-      }
-    }
-  };
-
-  const handleReset = () => {
-    // 검색 조건 초기화 함수
-    setSchedules([]);
-    setEmptySchedules([]);
-    setRange(null);
-    setNumber(1);
-    setUnit("일");
-    const calendarApi = calendarRef.current.getApi();
-    calendarApi.removeAllEvents();
-  };
-
-  // 새 멤버 추가 함수
-  const handleAddMember = () => {
-    setIsModalVisible(true);
-  };
-
-  const handleModalOk = () => {
-    // 모달창에서 친구 선택하고 추가 버튼 누르면 멤버 상태에 추가됨
-    console.log(selectedFriend);
-    if (selectedFriend) {
-      const newMember = {
-        id: selectedFriend.friendId,
-        name: selectedFriend.friendName,
-        photo: selectedFriend.friendProfileImagePath,
-      };
-      setMembers([...members, newMember]);
-      setSelectedFriend(null); // 선택된 친구 초기화
-    }
-    setIsModalVisible(false);
-  };
-
-  const handleModalCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  // 멤버 삭제 함수
-  const handleDeleteMember = id => {
-    // 멤버 삭제 함수
-    setMembers(members.filter(member => member.id !== id));
-  };
-
-  // 일정 등록 요청
-  const sendScheduleRequest = async (
-    title,
-    description,
-    location,
-    startTime,
-    endTime,
-    color
-  ) => {
-    const accessToken = localStorage.getItem("accessToken");
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      };
-
-      console.log(members);
-
-      const memberData = members
-        .filter(item => item.id !== localStorage.getItem("userId"))
-        .map(item => ({ id: item.id }));
-
-      console.log(memberData);
-
-      const data = {
-        sender: {
-          id: localStorage.getItem("userId"),
-        },
-        requestedSchedule: {
-          title: title,
-          description: description,
-          location: location,
-          startTime: startTime + ":00",
-          endTime: endTime + ":00",
-          color: color,
-        },
-        receivers: memberData,
-      };
-
-      console.log("da", data);
-
-      const res = await axios.post(
-        process.env.REACT_APP_SERVER_URL + "/api/request/add/schedule",
-        data,
-        config
-      );
-
-      if (res.data.code === 201) {
-        return true;
-      } else if (res.data.code === 401) {
-        await refreshAccessToken(navigate);
-        sendScheduleRequest(
-          title,
-          description,
-          location,
-          startTime,
-          endTime,
-          color
+    const fetchFriendList = async () => {
+        const res = await api.get(
+            `/api/friend/list/memberId/${localStorage.getItem("userId")}`,
+            navigate
         );
-      } else {
-        return new Error("unknown Error");
-      }
-    } catch (error) {
-      console.error(error);
-      return false;
-    }
-  };
+        if (res.data.code === 200) {
+            return res.data.data; // 수정된 부분
+        }
+    };
 
-  const handleEventClick = info => {
-    const event = info.event;
+    useEffect(() => {
+        // 친구 목록을 받아오는 함수
+        const fetchFriends = async () => {
+            let data = await fetchFriendList();
+            data = data.map((item) => ({
+                ...item,
+                friendId: item.friendMemberId,
+            }));
+            setFriends(data); // 수정된 부분
+        };
 
-    // 빈 일정에 대해서만 모달창을 띄우기
-    if (event.id.startsWith("empty-")) {
-      const startTime = moment(event.start).format("YYYY-MM-DD HH:mm");
-      const endTime = moment(event.end).format("YYYY-MM-DD HH:mm");
+        fetchFriends();
+    }, []);
 
-      Swal.fire({
-        title: "일정 추가 요청",
-        html: `
+    const fetchGroupMembers = async (group) => {
+        const res = await api.get(
+            `/api/group/list/members/member/${localStorage.getItem(
+                "userId"
+            )}/group/${group.groupId}`,
+            navigate
+        );
+
+        if (res.data.code === 200) {
+            return res.data.data; // 수정된 부분
+        }
+    };
+
+    useEffect(() => {
+        // 선택된 그룹의 멤버 목록을 받아오는 함수
+        const getGroupMembers = async () => {
+            if (selectedGroup) {
+                console.log(selectedGroup);
+                const data = await fetchGroupMembers(selectedGroup);
+                const membersData = [
+                    {
+                        id: "TESTID1",
+                        userName: "TESTNAME1",
+                        profileImgPath: "TESTURL1",
+                    },
+                ];
+                // setGroupMembers(membersData);
+                setGroupMembers(data);
+            }
+        };
+
+        getGroupMembers();
+    }, [selectedGroup]);
+
+    const handleBack = () => {
+        navigate(-1);
+    };
+
+    const handleNumberChange = (value) => {
+        setNumber(value);
+    };
+
+    const handleMinuteChange = (value) => {
+        setMinute(value);
+    };
+
+    const handleUnitChange = (value) => {
+        setUnit(value);
+    };
+
+    const handleRangeChange = (dates) => {
+        setRange(dates);
+    };
+
+    const getMembersSchedules = async () => {
+        if (range === null) {
+            Swal.fire({
+                position: "center",
+                icon: "error",
+                title: "에러!",
+                text: "검색일을 지정해주세요!",
+                showConfirmButton: false,
+                timer: 1500,
+            });
+            return;
+        }
+
+        const memberData = members.map((item) => item.id);
+
+        const data = {
+            members: memberData,
+            startDate: formatDate(range[0].$d),
+            endDate: formatDate(range[1].$d),
+            findDay: null,
+            findMinute: null,
+        };
+
+        console.log("data", data);
+
+        const res = await api.post(
+            "/api/commonscheduleController/memberScheduleReq",
+            data,
+            navigate
+        );
+
+        console.log("mem", res);
+
+        if (res.data.code === 200) {
+            return res.data.data;
+        } else return [];
+    };
+
+    const getEmptySchedules = async () => {
+        if (range === null) {
+            Swal.fire({
+                position: "center",
+                icon: "error",
+                title: "에러!",
+                text: "검색일을 지정해주세요!",
+                showConfirmButton: false,
+                timer: 1500,
+            });
+            return;
+        }
+
+        const memberData = members.map((item) => item.id);
+
+        let data;
+        if (unit === "일") {
+            data = {
+                members: memberData,
+                startDate: formatDate(range[0].$d),
+                endDate: formatDate(range[1].$d),
+                findDay: number,
+                findMinute: 0,
+            };
+        } else if (unit === "시간") {
+            data = {
+                members: memberData,
+                startDate: formatDate(range[0].$d),
+                endDate: formatDate(range[1].$d),
+                findDay: 0,
+                findMinute: number * 60,
+            };
+        } else if (unit === "분") {
+            data = {
+                members: memberData,
+                startDate: formatDate(range[0].$d),
+                endDate: formatDate(range[1].$d),
+                findDay: 0,
+                findMinute: number * 60 + minute,
+            };
+        } else {
+            throw new Error("type mismatch");
+        }
+
+        console.log("data", data);
+        console.log("toDate", range[0].toDate());
+
+        const res = await api.post(
+            "/api/commonscheduleController/findEmptyScheduleReq",
+            data,
+            navigate
+        );
+
+        console.log(res);
+
+        if (res.data.code === 200) {
+            return res.data.data;
+        } else return [];
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        // getMonth()는 0부터 시작하므로 1을 더해준다. 월이 한 자리수일 때 앞에 '0'을 붙여준다.
+        const month = ("0" + (date.getMonth() + 1)).slice(-2);
+        // getDate()는 날짜를 반환한다. 일이 한 자리수일 때 앞에 '0'을 붙여준다.
+        const day = ("0" + date.getDate()).slice(-2);
+
+        return `${year}-${month}-${day}`;
+    };
+
+    const handleSearch = async () => {
+        //✌️찾기버튼 눌렀을떄! unit에서 일인지 시간인지 분인지 확인해야 함.
+        // console.log(formatDate(range));
+
+        // 일정 데이터를 받아옴. -> 각자 개인 일정?
+        const fetchSchedules = async () => {
+            const data = [
+                [
+                    { startTime: "2024-05-01", endTime: "2024-07-02" },
+                    { startTime: "2024-07-10", endTime: "2024-08-02" },
+                    { startTime: "2024-09-21", endTime: "2024-12-31" },
+                    { startTime: "2025-01-01", endTime: "2025-03-31" },
+                    { startTime: "2025-04-01", endTime: "2025-06-30" },
+                ],
+                [
+                    { startTime: "2024-06-01", endTime: "2024-08-01" },
+                    { startTime: "2024-08-10", endTime: "2024-10-20" },
+                    { startTime: "2024-10-21", endTime: "2025-01-31" },
+                    { startTime: "2025-02-01", endTime: "2025-04-30" },
+                    { startTime: "2025-05-01", endTime: "2025-07-30" },
+                ],
+                [
+                    { startTime: "2024-06-01", endTime: "2024-08-01" },
+                    { startTime: "2024-08-11", endTime: "2024-10-20" },
+                    { startTime: "2024-10-21", endTime: "2025-01-31" },
+                    { startTime: "2025-02-01", endTime: "2025-04-30" },
+                    { startTime: "2025-05-01", endTime: "2025-07-30" },
+                ],
+            ];
+            setSchedules(data);
+        };
+
+        // 빈일정 데이터를 받아오는 함수 -> 빈 일정
+        const fetchEmptySchedules = async () => {
+            const emptyData = [
+                { startTime: "2024-08-02", endTime: "2024-08-06" },
+                { startTime: "2024-08-03", endTime: "2024-08-07" },
+                { startTime: "2024-08-04", endTime: "2024-08-08" },
+                { startTime: "2024-08-05", endTime: "2024-08-09" },
+                { startTime: "2024-08-06", endTime: "2024-08-10" },
+            ];
+
+            const data = await getEmptySchedules();
+            setEmptySchedules(data);
+
+            console.log(emptySchedules);
+        };
+
+        // await fetchSchedules();
+
+        const emptyScheduleData = await getEmptySchedules();
+        setEmptySchedules(emptyScheduleData);
+
+        const memberScheduleData = await getMembersSchedules();
+        if (memberScheduleData) {
+            const memberSchedule = memberScheduleData.map(
+                (item) => item.scheduleList
+            );
+            console.log(memberSchedule);
+            setSchedules(memberSchedule);
+        }
+
+        if (range && range.length === 2) {
+            // 검색 조건이 선택된 경우
+            const calendarApi = calendarRef.current.getApi();
+            const startDate = range[0].toDate();
+            const endDate = range[1].toDate();
+            const duration =
+                moment(endDate).diff(moment(startDate), "months") + 1; // 월 단위로 계산
+
+            calendarApi.gotoDate(startDate); // 선택된 범위의 시작 날짜로 이동
+
+            // FullCalendar의 view를 업데이트
+            if (unit === "일") {
+                calendarApi.changeView("customRange", {
+                    duration: { months: 3 },
+                    visibleRange: {
+                        start: startDate,
+                        end: endDate,
+                    },
+                });
+            } else if (unit === "시간") {
+                calendarApi.changeView("customHourRange", {
+                    duration: { hours: 430 }, // 49주를 일수로 변환
+                    visibleRange: {
+                        start: startDate,
+                    },
+                    slotLabelFormat: [
+                        { month: "short", day: "numeric", weekday: "short" }, // 상위 레벨: 월, , 요일
+                        { hour: "2-digit", minute: "2-digit", hour12: false }, // 하위 레벨: 시간
+                    ],
+                });
+            } else if (unit === "분") {
+                calendarApi.changeView("customMinuteRange", {
+                    duration: { hours: 430 }, // 2일을 분으로 변환
+                    visibleRange: {
+                        start: startDate,
+                    },
+                    slotLabelFormat: [
+                        { month: "short", day: "numeric", weekday: "short" }, // 상위 레벨: 월, , 요일
+                        { hour: "2-digit", minute: "2-digit", hour12: false }, // 하위 레벨: 시간
+                    ],
+                });
+            }
+        }
+    };
+
+    const handleReset = () => {
+        // 검색 조건 초기화 함수
+        setSchedules([]);
+        setEmptySchedules([]);
+        setRange(null);
+        setNumber(1);
+        setUnit("일");
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.removeAllEvents();
+    };
+
+    // 새 멤버 추가 함수
+    const handleAddMember = () => {
+        setIsModalVisible(true);
+    };
+
+    const handleModalOk = () => {
+        // 모달창에서 친구 선택하고 추가 버튼 누르면 멤버 상태에 추가됨
+        console.log(selectedFriend);
+        if (selectedFriend) {
+            const newMember = {
+                id: selectedFriend.friendId,
+                name: selectedFriend.friendName,
+                photo: selectedFriend.friendProfileImagePath,
+            };
+            setMembers([...members, newMember]);
+            setSelectedFriend(null); // 선택된 친구 초기화
+        }
+        setIsModalVisible(false);
+    };
+
+    const handleModalCancel = () => {
+        setIsModalVisible(false);
+    };
+
+    // 멤버 삭제 함수
+    const handleDeleteMember = (id) => {
+        // 멤버 삭제 함수
+        setMembers(members.filter((member) => member.id !== id));
+    };
+
+    // 일정 등록 요청
+    const sendScheduleRequest = async (
+        title,
+        description,
+        location,
+        startTime,
+        endTime,
+        color
+    ) => {
+        console.log(members);
+
+        const memberData = members
+            .filter((item) => item.id !== localStorage.getItem("userId"))
+            .map((item) => ({ id: item.id }));
+
+        console.log(memberData);
+
+        const data = {
+            sender: {
+                id: localStorage.getItem("userId"),
+            },
+            requestedSchedule: {
+                title: title,
+                description: description,
+                location: location,
+                startTime: startTime + ":00",
+                endTime: endTime + ":00",
+                color: color,
+            },
+            receivers: memberData,
+        };
+
+        console.log("da", data);
+
+        const res = await api.post("/api/request/add/schedule", data, navigate);
+
+        if (res.data.code === 201) {
+            return true;
+        } else return false;
+    };
+
+    const handleEventClick = (info) => {
+        const event = info.event;
+
+        // 빈 일정에 대해서만 모달창을 띄우기
+        if (event.id.startsWith("empty-")) {
+            const startTime = moment(event.start).format("YYYY-MM-DD HH:mm");
+            const endTime = moment(event.end).format("YYYY-MM-DD HH:mm");
+
+            Swal.fire({
+                title: "일정 추가 요청",
+                html: `
                     <input id="swal-input1" class="swal2-input" placeholder="제목">
                     <input id="swal-input2" class="swal2-input" placeholder="내용">
                     <input id="swal-input3" class="swal2-input" type="datetime-local" value="${startTime}">
                     <input id="swal-input4" class="swal2-input" type="datetime-local" value="${endTime}">
                 `,
-        focusConfirm: false,
-        preConfirm: () => {
-          const title = document.getElementById("swal-input1").value;
-          const content = document.getElementById("swal-input2").value;
-          const start = document.getElementById("swal-input3").value;
-          const end = document.getElementById("swal-input4").value;
+                focusConfirm: false,
+                preConfirm: () => {
+                    const title = document.getElementById("swal-input1").value;
+                    const content =
+                        document.getElementById("swal-input2").value;
+                    const start = document.getElementById("swal-input3").value;
+                    const end = document.getElementById("swal-input4").value;
 
-          if (title && start && end) {
-            console.log("Title:", title);
-            console.log("Content:", content);
-            console.log("Start:", start);
-            console.log("End:", end);
-            const data = {
-              title: title,
-              content: content,
-              start: start,
-              end: end,
-            };
+                    if (title && start && end) {
+                        console.log("Title:", title);
+                        console.log("Content:", content);
+                        console.log("Start:", start);
+                        console.log("End:", end);
+                        const data = {
+                            title: title,
+                            content: content,
+                            start: start,
+                            end: end,
+                        };
 
-            return data;
-          } else {
-            return Swal.showValidationMessage(
-              "내용을 제외한 모든 정보가 있어야 해요!"
-            );
-          }
-        },
-      }).then(async res => {
-        if (res.isConfirmed) {
-          console.log(res);
-          Swal.fire({
-            icon: "question",
-            title: "일정 추가 요청",
-            width: 800,
-            html: `내 캘린더에는 일정이 추가되고, 선택한 멤버들에게는 일정 등록 요청이 발생해요!<br>
+                        return data;
+                    } else {
+                        return Swal.showValidationMessage(
+                            "내용을 제외한 모든 정보가 있어야 해요!"
+                        );
+                    }
+                },
+            }).then(async (res) => {
+                if (res.isConfirmed) {
+                    console.log(res);
+                    Swal.fire({
+                        icon: "question",
+                        title: "일정 추가 요청",
+                        width: 800,
+                        html: `내 캘린더에는 일정이 추가되고, 선택한 멤버들에게는 일정 등록 요청이 발생해요!<br>
                         정말로 ${formatDate(res.value.start)} ~ ${formatDate(
-              res.value.end
-            )} 일정으로 요청을 보낼까요?`,
-            showCancelButton: true,
-            confirmButtonText: "요청",
-            cancelButtonText: "취소",
-          }).then(async response => {
-            if (response.isConfirmed) {
-              const res2 = await sendScheduleRequest(
-                res.value.title,
-                res.value.content,
-                "",
-                res.value.start,
-                res.value.end,
-                "#E94E77"
-              );
-              if (res2) {
-                Swal.fire({
-                  position: "center",
-                  icon: "success",
-                  title: "정상적으로 요청되었어요!",
-                  showConfirmButton: false,
-                  timer: 1500,
-                }).then(res => {
-                  navigate("/");
-                });
-              } else {
-                Swal.fire({
-                  position: "center",
-                  icon: "error",
-                  html: `요청 중 오류가 발생했어요!<br>잠시 후, 다시 한 번 시도해주세요!`,
-                  showConfirmButton: false,
-                  timer: 1500,
-                });
-              }
-            } else {
-              Swal.fire({
-                position: "center",
-                icon: "info",
-                title: "요청을 취소했어요.",
-                showConfirmButton: false,
-                timer: 1500,
-              });
-            }
-          });
+                            res.value.end
+                        )} 일정으로 요청을 보낼까요?`,
+                        showCancelButton: true,
+                        confirmButtonText: "요청",
+                        cancelButtonText: "취소",
+                    }).then(async (response) => {
+                        if (response.isConfirmed) {
+                            const res2 = await sendScheduleRequest(
+                                res.value.title,
+                                res.value.content,
+                                "",
+                                res.value.start,
+                                res.value.end,
+                                "#E94E77"
+                            );
+                            if (res2) {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "success",
+                                    title: "정상적으로 요청되었어요!",
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                }).then((res) => {
+                                    navigate("/");
+                                });
+                            } else {
+                                Swal.fire({
+                                    position: "center",
+                                    icon: "error",
+                                    html: `요청 중 오류가 발생했어요!<br>잠시 후, 다시 한 번 시도해주세요!`,
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                });
+                            }
+                        } else {
+                            Swal.fire({
+                                position: "center",
+                                icon: "info",
+                                title: "요청을 취소했어요.",
+                                showConfirmButton: false,
+                                timer: 1500,
+                            });
+                        }
+                    });
+                }
+            });
         }
-      });
-    }
-  };
+    };
 
-  const ScheduleSearch = () => {
-    // 일정 검색 컴포넌트
-    // 기존 일정 이벤트
-    const events = schedules.flatMap((scheduleList, listIdx) =>
-      scheduleList.map((schedule, idx) => ({
-        id: `schedule-${listIdx}-${idx}`,
-        resourceId: `member-${listIdx}`,
-        start: schedule.startTime,
-        end: schedule.endTime,
-        title: `일정 ${listIdx + 1}-${idx + 1}`,
-        color: "#4A90E2", // 새로 일정 색상 설정 (파란)
-      }))
-    );
+    const ScheduleSearch = () => {
+        // 일정 검색 컴포넌트
+        // 기존 일정 이벤트
+        const events = schedules.flatMap((scheduleList, listIdx) =>
+            scheduleList.map((schedule, idx) => ({
+                id: `schedule-${listIdx}-${idx}`,
+                resourceId: `member-${listIdx}`,
+                start: schedule.startTime,
+                end: schedule.endTime,
+                title: `일정 ${listIdx + 1}-${idx + 1}`,
+                color: "#4A90E2", // 새로 일정 색상 설정 (파란)
+            }))
+        );
 
-    console.log("em", emptySchedules);
+        console.log("em", emptySchedules);
 
-    // 빈 일정 벤트 추가
-    const emptyEvents = emptySchedules
-      ? emptySchedules.map((empty, idx) => ({
-          id: `empty-${idx}`,
-          resourceId: "zempty", // 모든 빈 일정은 같은 리소스 ID를 사용
-          start: empty.startTime,
-          end: empty.endTime,
-          title: `빈 일정 ${idx + 1}`,
-          color: "#E94E77", // 새로운 빈 일정 색상 설 (분홍색)
-        }))
-      : [];
+        // 빈 일정 벤트 추가
+        const emptyEvents = emptySchedules
+            ? emptySchedules.map((empty, idx) => ({
+                  id: `empty-${idx}`,
+                  resourceId: "zempty", // 모든 빈 일정은 같은 리소스 ID를 사용
+                  start: empty.startTime,
+                  end: empty.endTime,
+                  title: `빈 일정 ${idx + 1}`,
+                  color: "#E94E77", // 새로운 빈 일정 색상 설 (분홍색)
+              }))
+            : [];
 
-    // 기존 일정과 빈 일정을 합친 새로운 이벤트 배열
-    const combinedEvents = [...events, ...emptyEvents];
+        // 기존 일정과 빈 일정을 합친 새로운 이벤트 배열
+        const combinedEvents = [...events, ...emptyEvents];
 
-    // 리소스 배열 수정 (빈 일정을 마지막에 추가)
-    const resources = [
-      ...members.map((member, idx) => ({
-        id: `member-${idx}`,
-        title: member.name,
-      })),
-      {
-        id: "zempty",
-        title: "빈 일정",
-      },
-    ];
+        // 리소스 배열 수정 (빈 일정을 마지막에 추가)
+        const resources = [
+            ...members.map((member, idx) => ({
+                id: `member-${idx}`,
+                title: member.name,
+            })),
+            {
+                id: "zempty",
+                title: "빈 일정",
+            },
+        ];
+
+        return (
+            <FullCalendar
+                initialDate={
+                    range !== null ? formatDate(range[0].$d) : new Date()
+                }
+                ref={calendarRef}
+                plugins={[resourceTimelinePlugin]}
+                // initialView="customRange"
+                initialView={
+                    unit === "일"
+                        ? "customRange"
+                        : unit === "시간"
+                        ? "customHourRange"
+                        : "customMinuteRange"
+                }
+                locale={koLocale}
+                headerToolbar={{
+                    left: "prev,next today",
+                    center: "title",
+                    // right: 'customMinuteRange,customHourRange,customRange,resourceTimelineDay,resourceTimelineMonth,resourceTimelineYear'
+                    right: "customMinuteRange,customHourRange,customRange",
+                }}
+                views={{
+                    resourceTimelineYear: {
+                        type: "resourceTimeline",
+                        duration: { years: 1 },
+                        buttonText: "연간",
+                    },
+                    customRange: {
+                        type: "resourceTimeline",
+                        duration: { months: 13 },
+                        buttonText: "일자범위",
+                        slotLabelFormat: [
+                            { month: "short" }, // 상위 레벨: 월, 일, 요일
+                            { day: "numeric" }, // 하위 레벨: 일
+                        ],
+                    },
+                    customHourRange: {
+                        type: "resourceTimeline",
+                        duration: { hours: 48 },
+                        buttonText: "시간범위",
+                        slotLabelFormat: [
+                            {
+                                month: "short",
+                                day: "numeric",
+                                weekday: "short",
+                            }, // 상위 레벨: 월, 일, 요일
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                            }, // 하위 레벨: 시간
+                        ],
+                    },
+                    customMinuteRange: {
+                        type: "resourceTimeline",
+                        duration: { hours: 48 },
+                        buttonText: "분범위",
+                        slotLabelFormat: [
+                            {
+                                month: "short",
+                                day: "numeric",
+                                weekday: "short",
+                            }, // 상위 레벨: 월, 일, 요일
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                            }, // 하위 레벨: 시간
+                        ],
+                    },
+                }}
+                resources={resources}
+                events={combinedEvents}
+                editable={true}
+                selectable={true}
+                eventOverlap={false} // 이벤트 겹침 방지
+                resourceAreaWidth="20%"
+                slotMinWidth={100}
+                eventClick={handleEventClick} // 이벤트 클릭 핸들러 추가
+                customButtons={{
+                    prev: {
+                        text: "prev",
+                        click: () => {
+                            console.log("Prev button clicked");
+                            const calendarApi = calendarRef.current.getApi();
+                            calendarApi.prev();
+                            const currentDate = calendarApi.getDate();
+                            const newDate = moment(currentDate)
+                                .subtract(2, "days")
+                                .toDate();
+                            console.log("2 days before:", newDate);
+                        },
+                    },
+                    next: {
+                        text: "next",
+                        click: () => {
+                            console.log("Next button clicked");
+                            const calendarApi = calendarRef.current.getApi();
+                            calendarApi.next();
+                            const currentDate = calendarApi.getDate();
+                            const newDate = moment(currentDate)
+                                .add(2, "days")
+                                .toDate();
+                            console.log("2 days after:", newDate);
+                        },
+                    },
+                }}
+            />
+        );
+    };
 
     return (
-      <FullCalendar
-        initialDate={range !== null ? formatDate(range[0].$d) : new Date()}
-        ref={calendarRef}
-        plugins={[resourceTimelinePlugin]}
-        // initialView="customRange"
-        initialView={
-          unit === "일"
-            ? "customRange"
-            : unit === "시간"
-            ? "customHourRange"
-            : "customMinuteRange"
-        }
-        locale={koLocale}
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          // right: 'customMinuteRange,customHourRange,customRange,resourceTimelineDay,resourceTimelineMonth,resourceTimelineYear'
-          right: "customMinuteRange,customHourRange,customRange",
-        }}
-        views={{
-          resourceTimelineYear: {
-            type: "resourceTimeline",
-            duration: { years: 1 },
-            buttonText: "연간",
-          },
-          customRange: {
-            type: "resourceTimeline",
-            duration: { months: 13 },
-            buttonText: "일자범위",
-            slotLabelFormat: [
-              { month: "short" }, // 상위 레벨: 월, 일, 요일
-              { day: "numeric" }, // 하위 레벨: 일
-            ],
-          },
-          customHourRange: {
-            type: "resourceTimeline",
-            duration: { hours: 48 },
-            buttonText: "시간범위",
-            slotLabelFormat: [
-              { month: "short", day: "numeric", weekday: "short" }, // 상위 레벨: 월, 일, 요일
-              { hour: "2-digit", minute: "2-digit", hour12: false }, // 하위 레벨: 시간
-            ],
-          },
-          customMinuteRange: {
-            type: "resourceTimeline",
-            duration: { hours: 48 },
-            buttonText: "분범위",
-            slotLabelFormat: [
-              { month: "short", day: "numeric", weekday: "short" }, // 상위 레벨: 월, 일, 요일
-              { hour: "2-digit", minute: "2-digit", hour12: false }, // 하위 레벨: 시간
-            ],
-          },
-        }}
-        resources={resources}
-        events={combinedEvents}
-        editable={true}
-        selectable={true}
-        eventOverlap={false} // 이벤트 겹침 방지
-        resourceAreaWidth="20%"
-        slotMinWidth={100}
-        eventClick={handleEventClick} // 이벤트 클릭 핸들러 추가
-        customButtons={{
-          prev: {
-            text: "prev",
-            click: () => {
-              console.log("Prev button clicked");
-              const calendarApi = calendarRef.current.getApi();
-              calendarApi.prev();
-              const currentDate = calendarApi.getDate();
-              const newDate = moment(currentDate).subtract(2, "days").toDate();
-              console.log("2 days before:", newDate);
-            },
-          },
-          next: {
-            text: "next",
-            click: () => {
-              console.log("Next button clicked");
-              const calendarApi = calendarRef.current.getApi();
-              calendarApi.next();
-              const currentDate = calendarApi.getDate();
-              const newDate = moment(currentDate).add(2, "days").toDate();
-              console.log("2 days after:", newDate);
-            },
-          },
-        }}
-      />
-    );
-  };
-
-  return (
-    <div className={styles.container} style={{ fontFamily: "Noto Sans KR" }}>
-      <div className={styles.header}>
-        <button className={styles.backButton} onClick={handleBack}>
-          {"<"}
-        </button>
-        <h1 className={styles.title}>빈일정찾기</h1>
-      </div>
-      <div className={styles.subPanel}>
-        <RangePicker
-          getPopupContainer={trigger => trigger.parentNode}
-          onChange={handleRangeChange}
-        />
-        <InputNumber
-          min={unit === "분" ? 0 : 1}
-          max={unit === "분" || unit === "시간" ? 23 : 30}
-          value={number}
-          onChange={handleNumberChange}
-          style={{ marginLeft: "20px" }}
-        />
-        {unit === "분" ? (
-          <div>
-            <Button type="text">시간</Button>
-            <Select
-              value={minute}
-              onChange={handleMinuteChange}
-              getPopupContainer={trigger => trigger.parentNode}>
-              <Option value="10">10</Option>
-              <Option value="20">20</Option>
-              <Option value="30">30</Option>
-              <Option value="40">40</Option>
-              <Option value="50">50</Option>
-            </Select>
-          </div>
-        ) : null}
-
-        <Select
-          value={unit}
-          onChange={handleUnitChange}
-          getPopupContainer={trigger => trigger.parentNode}
-          style={{ width: "100px", marginLeft: "20px" }}>
-          <Option value="일">일</Option>
-          <Option value="시간">시간</Option>
-          <Option value="분">분</Option>
-        </Select>
-        <button
-          onClick={handleSearch}
-          style={{
-            background: "linear-gradient(315deg, #A031E4, #E492F8)",
-            color: "white",
-            marginLeft: "20px",
-            padding: "5px 10px",
-            border: "none",
-            borderRadius: "5px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseEnter={e =>
-            (e.target.style.background =
-              "linear-gradient(315deg, #A031E4, #D482F8)")
-          }
-          onMouseLeave={e =>
-            (e.target.style.background =
-              "linear-gradient(315deg, #A031E4, #E492F8)")
-          }
-          onMouseDown={e => (e.target.style.transform = "scale(0.95)")}
-          onMouseUp={e => (e.target.style.transform = "scale(1)")}>
-          찾기
-        </button>
-        <button
-          onClick={handleReset}
-          style={{
-            background: "linear-gradient(315deg, #A031E4, #E492F8)",
-            color: "white",
-            marginLeft: "10px",
-            padding: "5px 10px",
-            border: "none",
-            borderRadius: "5px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseEnter={e =>
-            (e.target.style.background =
-              "linear-gradient(315deg, #A031E4, #D482F8)")
-          }
-          onMouseLeave={e =>
-            (e.target.style.background =
-              "linear-gradient(315deg, #A031E4, #E492F8)")
-          }
-          onMouseDown={e => (e.target.style.transform = "scale(0.95)")}
-          onMouseUp={e => (e.target.style.transform = "scale(1)")}>
-          초기화
-        </button>
-      </div>
-      <div
-        className={styles.subPanel}
-        style={{
-          display: "flex",
-          overflowX: "auto",
-          justifyContent: "flex-start",
-          height: "40px",
-        }}>
-        <Button onClick={handleAddMember} style={{ marginRight: "10px" }}>
-          멤버 추가
-        </Button>
-        {members.map((member, index) => (
-          <div
-            key={member.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginRight: "10px",
-            }}>
-            {member.photo ? (
-              <img
-                src={member.photo}
-                alt={member.name}
-                style={{
-                  borderRadius: "50%",
-                  marginRight: "10px",
-                  width: "40px",
-                  height: "40px",
-                }}
-              />
-            ) : (
-              <UserOutlined style={{ fontSize: "40px", marginRight: "10px" }} /> // 기본 아이콘 사용
-            )}
-            <span
-              style={{
-                cursor: index !== 0 ? "pointer" : "default",
-                color: index !== 0 ? "black" : "gray",
-              }}
-              onMouseEnter={e => {
-                if (index !== 0) e.target.style.color = "red";
-              }}
-              onMouseLeave={e => {
-                if (index !== 0) e.target.style.color = "black";
-              }}
-              onClick={() => index !== 0 && handleDeleteMember(member.id)} // 첫 번째 멤버는 삭제 불가
-            >
-              {member.name}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div
-        className={styles.mainPanel}
-        style={{
-          padding: "20px",
-          backgroundColor: "white",
-          borderRadius: "15px",
-          marginTop: "10px",
-        }}>
-        <ScheduleSearch />
-      </div>
-      <Modal
-        title="멤버 추가"
-        visible={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={handleModalCancel}
-        destroyOnClose>
-        <Tabs defaultActiveKey="1">
-          <TabPane tab="친구선택" key="1">
-            <List
-              itemLayout="horizontal"
-              dataSource={friends}
-              renderItem={friend => (
-                <List.Item
-                  onClick={() => setSelectedFriend(friend)}
-                  style={{
-                    cursor: "pointer",
-                    backgroundColor:
-                      selectedFriend?.friendId === friend.friendId
-                        ? "#e6f7ff"
-                        : "transparent",
-                  }}>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        src={friend.friendProfileImagePath}
-                        icon={
-                          !friend.friendProfileImagePath && <UserOutlined />
-                        }
-                      />
-                    }
-                    title={friend.friendName}
-                  />
-                </List.Item>
-              )}
-            />
-          </TabPane>
-          <TabPane tab="그룹멤버" key="2">
-            <div style={{ display: "flex" }}>
-              <div style={{ flex: 1, marginRight: "10px" }}>
-                <List
-                  itemLayout="horizontal"
-                  dataSource={groups}
-                  renderItem={group =>
-                    group.groupId !== -1 && (
-                      <List.Item
-                        onClick={() => setSelectedGroup(group)}
-                        style={{
-                          cursor: "pointer",
-                          backgroundColor:
-                            selectedGroup?.groupId === group.groupId
-                              ? "#e6f7ff"
-                              : "transparent",
-                        }}>
-                        <List.Item.Meta title={group.groupName} />
-                      </List.Item>
-                    )
-                  }
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <List
-                  itemLayout="horizontal"
-                  dataSource={groupMembers}
-                  renderItem={member => (
-                    <List.Item
-                      onClick={() =>
-                        setSelectedFriend({
-                          friendId: member.id,
-                          friendName: member.userName,
-                          friendProfileImagePath: member.profileImgPath,
-                        })
-                      }
-                      style={{
-                        cursor: "pointer",
-                        backgroundColor:
-                          selectedFriend?.friendId === member.id
-                            ? "#e6f7ff"
-                            : "transparent",
-                      }}>
-                      <List.Item.Meta
-                        avatar={
-                          <Avatar
-                            src={member.profileImgPath}
-                            icon={!member.profileImgPath && <UserOutlined />}
-                          />
-                        }
-                        title={member.userName}
-                      />
-                    </List.Item>
-                  )}
-                />
-              </div>
+        <div
+            className={styles.container}
+            style={{ fontFamily: "Noto Sans KR" }}
+        >
+            <div className={styles.header}>
+                <button className={styles.backButton} onClick={handleBack}>
+                    {"<"}
+                </button>
+                <h1 className={styles.title}>빈일정찾기</h1>
             </div>
-          </TabPane>
-        </Tabs>
-      </Modal>
-    </div>
-  );
+            <div className={styles.subPanel}>
+                <RangePicker
+                    getPopupContainer={(trigger) => trigger.parentNode}
+                    onChange={handleRangeChange}
+                />
+                <InputNumber
+                    min={unit === "분" ? 0 : 1}
+                    max={unit === "분" || unit === "시간" ? 23 : 30}
+                    value={number}
+                    onChange={handleNumberChange}
+                    style={{ marginLeft: "20px" }}
+                />
+                {unit === "분" ? (
+                    <div>
+                        <Button type="text">시간</Button>
+                        <Select
+                            value={minute}
+                            onChange={handleMinuteChange}
+                            getPopupContainer={(trigger) => trigger.parentNode}
+                        >
+                            <Option value="10">10</Option>
+                            <Option value="20">20</Option>
+                            <Option value="30">30</Option>
+                            <Option value="40">40</Option>
+                            <Option value="50">50</Option>
+                        </Select>
+                    </div>
+                ) : null}
+
+                <Select
+                    value={unit}
+                    onChange={handleUnitChange}
+                    getPopupContainer={(trigger) => trigger.parentNode}
+                    style={{ width: "100px", marginLeft: "20px" }}
+                >
+                    <Option value="일">일</Option>
+                    <Option value="시간">시간</Option>
+                    <Option value="분">분</Option>
+                </Select>
+                <button
+                    onClick={handleSearch}
+                    style={{
+                        background: "linear-gradient(315deg, #A031E4, #E492F8)",
+                        color: "white",
+                        marginLeft: "20px",
+                        padding: "5px 10px",
+                        border: "none",
+                        borderRadius: "5px",
+                        transition: "background 0.3s, transform 0.3s",
+                    }}
+                    onMouseEnter={(e) =>
+                        (e.target.style.background =
+                            "linear-gradient(315deg, #A031E4, #D482F8)")
+                    }
+                    onMouseLeave={(e) =>
+                        (e.target.style.background =
+                            "linear-gradient(315deg, #A031E4, #E492F8)")
+                    }
+                    onMouseDown={(e) =>
+                        (e.target.style.transform = "scale(0.95)")
+                    }
+                    onMouseUp={(e) => (e.target.style.transform = "scale(1)")}
+                >
+                    찾기
+                </button>
+                <button
+                    onClick={handleReset}
+                    style={{
+                        background: "linear-gradient(315deg, #A031E4, #E492F8)",
+                        color: "white",
+                        marginLeft: "10px",
+                        padding: "5px 10px",
+                        border: "none",
+                        borderRadius: "5px",
+                        transition: "background 0.3s, transform 0.3s",
+                    }}
+                    onMouseEnter={(e) =>
+                        (e.target.style.background =
+                            "linear-gradient(315deg, #A031E4, #D482F8)")
+                    }
+                    onMouseLeave={(e) =>
+                        (e.target.style.background =
+                            "linear-gradient(315deg, #A031E4, #E492F8)")
+                    }
+                    onMouseDown={(e) =>
+                        (e.target.style.transform = "scale(0.95)")
+                    }
+                    onMouseUp={(e) => (e.target.style.transform = "scale(1)")}
+                >
+                    초기화
+                </button>
+            </div>
+            <div
+                className={styles.subPanel}
+                style={{
+                    display: "flex",
+                    overflowX: "auto",
+                    justifyContent: "flex-start",
+                    height: "40px",
+                }}
+            >
+                <Button
+                    onClick={handleAddMember}
+                    style={{ marginRight: "10px" }}
+                >
+                    멤버 추가
+                </Button>
+                {members.map((member, index) => (
+                    <div
+                        key={member.id}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            marginRight: "10px",
+                        }}
+                    >
+                        {member.photo ? (
+                            <img
+                                src={member.photo}
+                                alt={member.name}
+                                style={{
+                                    borderRadius: "50%",
+                                    marginRight: "10px",
+                                    width: "40px",
+                                    height: "40px",
+                                }}
+                            />
+                        ) : (
+                            <UserOutlined
+                                style={{
+                                    fontSize: "40px",
+                                    marginRight: "10px",
+                                }}
+                            /> // 기본 아이콘 사용
+                        )}
+                        <span
+                            style={{
+                                cursor: index !== 0 ? "pointer" : "default",
+                                color: index !== 0 ? "black" : "gray",
+                            }}
+                            onMouseEnter={(e) => {
+                                if (index !== 0) e.target.style.color = "red";
+                            }}
+                            onMouseLeave={(e) => {
+                                if (index !== 0) e.target.style.color = "black";
+                            }}
+                            onClick={() =>
+                                index !== 0 && handleDeleteMember(member.id)
+                            } // 첫 번째 멤버는 삭제 불가
+                        >
+                            {member.name}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            <div
+                className={styles.mainPanel}
+                style={{
+                    padding: "20px",
+                    backgroundColor: "white",
+                    borderRadius: "15px",
+                    marginTop: "10px",
+                }}
+            >
+                <ScheduleSearch />
+            </div>
+            <Modal
+                title="멤버 추가"
+                visible={isModalVisible}
+                onOk={handleModalOk}
+                onCancel={handleModalCancel}
+                destroyOnClose
+            >
+                <Tabs defaultActiveKey="1">
+                    <TabPane tab="친구선택" key="1">
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={friends}
+                            renderItem={(friend) => (
+                                <List.Item
+                                    onClick={() => setSelectedFriend(friend)}
+                                    style={{
+                                        cursor: "pointer",
+                                        backgroundColor:
+                                            selectedFriend?.friendId ===
+                                            friend.friendId
+                                                ? "#e6f7ff"
+                                                : "transparent",
+                                    }}
+                                >
+                                    <List.Item.Meta
+                                        avatar={
+                                            <Avatar
+                                                src={
+                                                    friend.friendProfileImagePath
+                                                }
+                                                icon={
+                                                    !friend.friendProfileImagePath && (
+                                                        <UserOutlined />
+                                                    )
+                                                }
+                                            />
+                                        }
+                                        title={friend.friendName}
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                    </TabPane>
+                    <TabPane tab="그룹멤버" key="2">
+                        <div style={{ display: "flex" }}>
+                            <div style={{ flex: 1, marginRight: "10px" }}>
+                                <List
+                                    itemLayout="horizontal"
+                                    dataSource={groups}
+                                    renderItem={(group) =>
+                                        group.groupId !== -1 && (
+                                            <List.Item
+                                                onClick={() =>
+                                                    setSelectedGroup(group)
+                                                }
+                                                style={{
+                                                    cursor: "pointer",
+                                                    backgroundColor:
+                                                        selectedGroup?.groupId ===
+                                                        group.groupId
+                                                            ? "#e6f7ff"
+                                                            : "transparent",
+                                                }}
+                                            >
+                                                <List.Item.Meta
+                                                    title={group.groupName}
+                                                />
+                                            </List.Item>
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <List
+                                    itemLayout="horizontal"
+                                    dataSource={groupMembers}
+                                    renderItem={(member) => (
+                                        <List.Item
+                                            onClick={() =>
+                                                setSelectedFriend({
+                                                    friendId: member.id,
+                                                    friendName: member.userName,
+                                                    friendProfileImagePath:
+                                                        member.profileImgPath,
+                                                })
+                                            }
+                                            style={{
+                                                cursor: "pointer",
+                                                backgroundColor:
+                                                    selectedFriend?.friendId ===
+                                                    member.id
+                                                        ? "#e6f7ff"
+                                                        : "transparent",
+                                            }}
+                                        >
+                                            <List.Item.Meta
+                                                avatar={
+                                                    <Avatar
+                                                        src={
+                                                            member.profileImgPath
+                                                        }
+                                                        icon={
+                                                            !member.profileImgPath && (
+                                                                <UserOutlined />
+                                                            )
+                                                        }
+                                                    />
+                                                }
+                                                title={member.userName}
+                                            />
+                                        </List.Item>
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </TabPane>
+                </Tabs>
+            </Modal>
+        </div>
+    );
 };
 
 export default PowerEmptySchedule;
