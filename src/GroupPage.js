@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./css/GroupPage.module.css";
 import { useNavigate } from "react-router-dom";
 
 import SelectedGroupInfo from "./groupComp/selectedGroupInfo";
 import CreateGroupPage from "./groupComp/CreateGroupPage";
 
-import api from "./security/TokenManage";
-import Swal from "sweetalert2";
-import { SearchOutlined } from "@ant-design/icons"; // antd 아이콘 추가
+import api from "./security/CocaApi";
 import Pagination from "@mui/material/Pagination"; // MUI Pagination 추가
 import { showLoginRequired } from "./security/ErrorController";
 
@@ -86,7 +84,7 @@ const GroupPage = () => {
 
     const fetchTagList = async () => {
         try {
-            const res = await api.get("/api/tag/all", navigate);
+            const res = await api.get(navigate, "/api/tag/all");
             console.log(res.data);
 
             return res.data;
@@ -97,10 +95,10 @@ const GroupPage = () => {
 
     const fetchUserTags = async () => {
         const res = await api.get(
+            navigate,
             `/api/member/memberTagInquiryReq?memberId=${localStorage.getItem(
                 "userId"
-            )}`,
-            navigate
+            )}`
         );
         if (res.data.code === 200) {
             return res.data.data;
@@ -150,7 +148,7 @@ const GroupPage = () => {
                 ? `/api/group/find/tag/${searchTag}/pageNum/${pageNum}`
                 : `/api/group/find/tag/pageNum/${pageNum}`;
 
-        const res = await api.get(url, navigate);
+        const res = await api.get(navigate, url);
         if (res.data.code === 200) {
             setTotalPages(res.data.totalPages);
             return res.data.data;
@@ -164,7 +162,7 @@ const GroupPage = () => {
                 ? `/api/group/find/groupName/${searchText}/pageNum/${pageNum}`
                 : `/api/group/find/groupName/pageNum/${pageNum}`;
 
-        const res = await api.get(url, navigate);
+        const res = await api.get(navigate, url);
         console.log(res);
 
         if (res.data.code === 200) {

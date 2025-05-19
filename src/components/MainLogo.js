@@ -1,9 +1,9 @@
 // import React, { useState } from 'react';
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { LogoutOutlined, BellOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import api from "../security/TokenManage";
-import { useDispatch, useSelector } from "react-redux";
+import api from "../security/CocaApi";
+import { useSelector } from "react-redux";
 
 const MainLogo = () => {
     const [showNotification, setShowNotification] = useState(true);
@@ -12,7 +12,7 @@ const MainLogo = () => {
     const selectedGroup = useSelector((state) => state.selectedGroup);
 
     const handleLogOut = async () => {
-        const res = await api.post("/api/member/logoutReq", null, navigate);
+        const res = await api.post(navigate, "/api/member/logoutReq", null);
         localStorage.clear();
         navigate("/");
     };
@@ -31,10 +31,10 @@ const MainLogo = () => {
             } else {
                 try {
                     const res = api.get(
+                        navigate,
                         `/api/group/notice?memberId=${localStorage.getItem(
                             "userId"
-                        )}&groupId=${selectedGroup.groupId}`,
-                        navigate
+                        )}&groupId=${selectedGroup.groupId}`
                     );
 
                     console.log(res);

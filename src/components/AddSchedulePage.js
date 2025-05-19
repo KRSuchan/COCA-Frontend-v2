@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { SketchPicker } from "react-color"; // Color Picker를 위한 라이브러리
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { refreshAccessToken } from "../security/TokenManage";
-import api from "../security/TokenManage";
+import api from "../security/CocaApi";
 import { dateValidationCheck } from "../security/ErrorController";
 
 // ✨ 추가, 수정, 삭제가 모두 가능한 페이지입니다.
@@ -98,19 +96,13 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
 
         if (selectedGroup.groupId === -1) {
             url = editingSchedule
-                ? `${process.env.REACT_APP_SERVER_URL}/api/personal-schedule/update`
-                : `${process.env.REACT_APP_SERVER_URL}/api/personal-schedule/add`;
-
-            // ... 요청 데이터 구성 및 axios 요청
-            if (method === "post") {
-                await postSchedule(url, method);
-            } else {
-                await postSchedule(url, method);
-            }
+                ? `/api/personal-schedule/update`
+                : `/api/personal-schedule/add`;
+            await postSchedule(url, method);
         } else {
             url = editingSchedule
-                ? `${process.env.REACT_APP_SERVER_URL}/api/group-schedule/groupScheduleUpdateReq`
-                : `${process.env.REACT_APP_SERVER_URL}/api/group-schedule/groupScheduleRegistrationReq`;
+                ? `/api/group-schedule/update`
+                : `/api/group-schedule/add`;
 
             await postGroupSchedule(url, method);
         }
@@ -121,56 +113,23 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
         // ✅ 삭제버튼을 눌렀을때
         const userId = localStorage.getItem("userId");
         let res;
-        const accessToken = localStorage.getItem("accessToken");
-        try {
-            if (selectedGroup.groupId === -1) {
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                };
-
-                res = await axios.delete(
-                    `${process.env.REACT_APP_SERVER_URL}/api/personal-schedule/delete?memberId=${userId}&personalScheduleId=${scheduleId}`,
-                    config
-                );
-            } else {
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    params: {
-                        groupId: selectedGroup.groupId,
-                        scheduleId: scheduleId,
-                        memberId: userId,
-                    },
-                };
-
-                console.log("del", scheduleId);
-                console.log("delEdit?", editingSchedule);
-                res = await axios.get(
-                    process.env.REACT_APP_SERVER_URL +
-                        `/api/group-schedule/groupScheduleDeleteReq`,
-                    config
-                );
-            }
-
-            console.log(res);
-
-            if (res.data.code === 200) {
-                return true;
-            } else if (res.data.code === 401) {
-                await refreshAccessToken(navigate);
-                deleteSchedule();
-            } else {
-                throw new Error("unknown Error");
-            }
-        } catch (error) {
-            console.error(error);
-            return false;
+        if (selectedGroup.groupId === -1) {
+            res = await api.del(
+                navigate,
+                `/api/personal-schedule/delete?memberId=${userId}&personalScheduleId=${scheduleId}`
+            );
+        } else {
+            res = api.del(
+                navigate,
+                `/api/group-schedule/delete?memberId=${userId}&groupId=${selectedGroup.groupId}&scheduleId=${scheduleId}`
+            );
         }
 
-        // TODO 그룹의 경우 예외처리가 있을 수 있음.
+        if (res.data.code === 200) {
+            return true;
+        } else {
+            return false;
+        }
     };
 
     const handleDelete = () => {
@@ -210,254 +169,99 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
         });
     };
 
-    const urlToFile = async (url, fileName) => {
-        try {
-            // e.preventDefault();
-            const response = await fetch(url);
-            console.log(response);
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-            const blob = await response.blob();
-            return new File([blob], fileName, { type: blob.type });
-        } catch (error) {
-            console.error("Error fetching file:", error);
-            throw error;
-        }
-    };
-
-    // const get
-
     // 개인
     const postSchedule = async (url, method) => {
-        const accessToken = localStorage.getItem("accessToken");
-
-        try {
-            console.log(startDate);
-            console.log(typeof startDate);
-            console.log(scheduleName);
-
-            let tmpAttachments = attachments;
-            if (attachments[0] === null && attachments[1] === null) {
-                tmpAttachments = null;
-            }
-
-            const requestData = {
-                personalSchedule: {
-                    id: scheduleId,
-                    title: scheduleName,
-                    description: scheduleDescription,
-                    location: location,
-                    startTime: formatDate(startDate),
-                    endTime: formatDate(endDate),
-                    color: colorCode,
-                    isPrivate: isPrivate,
-                    // attachments: attachmentData
-                },
-                member: {
-                    id: localStorage.getItem("userId"),
-                },
-                // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
-            };
-
-            console.log(requestData);
-
-            const formData = new FormData();
-            formData.append(
-                "data",
-                new Blob([JSON.stringify(requestData)], {
-                    type: "application/json",
-                })
-            );
-
-            if (tmpAttachments && tmpAttachments.length > 0) {
-                const attachmentPromises = tmpAttachments.map(
-                    async (attachment) => {
-                        if (attachment && !(attachment instanceof File)) {
-                            const downloadedFile = await urlToFile(
-                                attachment.filePath,
-                                attachment.fileName
-                            );
-                            formData.append("attachments", downloadedFile);
-                        } else if (attachment instanceof File) {
-                            formData.append("attachments", attachment);
-                        }
-                    }
-                );
-
-                await Promise.all(attachmentPromises);
-            } else {
-                formData.append("attachments", "[]");
-            }
-
-            // Log the FormData contents
-            for (let pair of formData.entries()) {
-                console.log(pair[0] + ", " + pair[1]);
-            }
-
-            console.log("att", tmpAttachments);
-            // tmpAttachments.map(item => {console.log(item instanceof File)});
-            console.log("fd", formData);
-
-            let response;
-
-            console.log("edit?", editingSchedule);
-
-            if (method === "post") {
-                response = await axios.post(url, formData, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        "Content-Type": "multipart/form-data",
-                    },
-                });
-            } else {
-                response = await axios.put(url, formData, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        "Content-Type": "multipart/form-data",
-                    },
-                });
-            }
-
-            console.log("submit", response);
-
-            if (response.data.code === 200 || response.data.code === 201) {
-                Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: method === "post" ? "등록 완료" : "수정 완료",
-                    text:
-                        method === "post"
-                            ? "일정을 정상적으로 등록했어요!"
-                            : "일정을 정상적으로 수정했어요!",
-                    showConfirmButton: false,
-                    timer: 1500,
-                }).then((res) => {
-                    window.location.reload();
-                });
-            } else if (response.data.code === 401) {
-                await refreshAccessToken(navigate);
-                postSchedule(url, method);
-            } else {
-                throw new Error("unknown Error");
-            }
-        } catch (error) {
-            console.error("일정 등록 에러: ", error);
-            Swal.fire({
-                position: "center",
-                icon: "error",
-                title: "에러!",
-                text: "서버와의 통신에 문제가 생겼어요!",
-                showConfirmButton: false,
-                timer: 1500,
-            });
-        }
-    };
-
-    // 그룹
-    const postGroupSchedule = async (url, method) => {
-        const accessToken = localStorage.getItem("accessToken");
-
-        try {
-            let tmpAttachments = attachments;
-            if (attachments[0] === null && attachments[1] === null) {
-                tmpAttachments = null;
-            }
-
-            console.log(scheduleId);
-
-            const requestData = {
-                scheduleId: scheduleId,
-                memberId: localStorage.getItem("userId"),
-                groupId: selectedGroup.groupId,
+        const requestData = {
+            personalSchedule: {
+                id: scheduleId,
                 title: scheduleName,
                 description: scheduleDescription,
                 location: location,
                 startTime: formatDate(startDate),
                 endTime: formatDate(endDate),
                 color: colorCode,
-                // isPrivate: isPrivate
-                // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
-            };
+                isPrivate: isPrivate,
+                // attachments: attachmentData
+            },
+            member: {
+                id: localStorage.getItem("userId"),
+            },
+            // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
+        };
 
-            const formData = new FormData();
-            // formData.append('scheduleId', {scheduleId}, {type: 'application/json'});
-            formData.append(
-                "scheduleData",
-                new Blob([JSON.stringify(requestData)], {
-                    type: "application/json",
-                })
+        let response;
+
+        if (method === "post") {
+            response = await api.post(
+                navigate,
+                url,
+                requestData,
+                "attachments",
+                attachments
             );
+        } else {
+            response = await api.put(
+                navigate,
+                url,
+                requestData,
+                "attachments",
+                attachments
+            );
+        }
 
-            if (tmpAttachments && tmpAttachments.length > 0) {
-                const attachmentPromises = tmpAttachments.map(
-                    async (attachment) => {
-                        if (attachment && !(attachment instanceof File)) {
-                            const downloadedFile = await urlToFile(
-                                attachment.filePath,
-                                attachment.fileName
-                            );
-                            formData.append("scheduleFiles", downloadedFile);
-                        } else if (attachment instanceof File) {
-                            formData.append("scheduleFiles", attachment);
-                        }
-                    }
-                );
-
-                await Promise.all(attachmentPromises);
-            } else {
-                formData.append("attachments", "[]");
-            }
-
-            // Log the FormData contents
-            for (let pair of formData.entries()) {
-                console.log(pair[0] + ", " + pair[1]);
-            }
-
-            console.log("att", tmpAttachments);
-
-            console.log("fd", formData);
-
-            console.log("edit?", editingSchedule);
-
-            const response = await axios.post(url, formData, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-
-            console.log(response);
-
-            if (response.data.code === 200 || response.data.code === 201) {
-                Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: method === "post" ? "등록 완료" : "수정 완료",
-                    text:
-                        method === "post"
-                            ? "일정을 정상적으로 등록했어요!"
-                            : "일정을 정상적으로 수정했어요!",
-                    showConfirmButton: false,
-                    timer: 1500,
-                }).then((res) => {
-                    window.location.reload();
-                });
-            } else if (response.data.code === 401) {
-                await refreshAccessToken(navigate);
-                postGroupSchedule(url, method);
-            } else {
-                throw new Error("unknown Error");
-            }
-        } catch (error) {
-            console.error(error);
+        if (response.data.code === 200 || response.data.code === 201) {
             Swal.fire({
                 position: "center",
-                icon: "error",
-                title: "에러!",
-                text: "서버와의 통신에 문제가 생겼어요!",
+                icon: "success",
+                title: method === "post" ? "등록 완료" : "수정 완료",
+                text:
+                    method === "post"
+                        ? "일정을 정상적으로 등록했어요!"
+                        : "일정을 정상적으로 수정했어요!",
                 showConfirmButton: false,
                 timer: 1500,
+            }).then((res) => {
+                window.location.reload();
+            });
+        }
+    };
+
+    // 그룹
+    const postGroupSchedule = async (url, method) => {
+        const requestData = {
+            scheduleId: scheduleId,
+            memberId: localStorage.getItem("userId"),
+            groupId: selectedGroup.groupId,
+            title: scheduleName,
+            description: scheduleDescription,
+            location: location,
+            startTime: formatDate(startDate),
+            endTime: formatDate(endDate),
+            color: colorCode,
+            // isPrivate: isPrivate
+            // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
+        };
+        const response = await api.post(
+            navigate,
+            url,
+            requestData,
+            "attachments",
+            attachments
+        );
+
+        if (response.data.code === 200 || response.data.code === 201) {
+            Swal.fire({
+                position: "center",
+                icon: "success",
+                title: method === "post" ? "등록 완료" : "수정 완료",
+                text:
+                    method === "post"
+                        ? "일정을 정상적으로 등록했어요!"
+                        : "일정을 정상적으로 수정했어요!",
+                showConfirmButton: false,
+                timer: 1500,
+            }).then((res) => {
+                window.location.reload();
             });
         }
     };

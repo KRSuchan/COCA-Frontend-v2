@@ -1,7 +1,7 @@
 import axios from "axios";
 import Swal from "sweetalert2";
 
-export const get = async (url, navigate) => {
+export const get = async (navigate, url, retry = 1) => {
     const accessToken = localStorage.getItem("accessToken");
 
     try {
@@ -22,15 +22,16 @@ export const get = async (url, navigate) => {
             return res;
         } else {
             // 200외의 에러
+            console.error(res.data.code);
             throw new Error("failed to get");
         }
     } catch (error) {
         const status = error.response?.status;
-        if (status === 401) {
+        if (status === 401 && retry > 0) {
             // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken(navigate);
+            const refreshed = await refreshAccessToken();
             if (refreshed) {
-                return get(url, navigate);
+                return get(navigate, url, retry - 1);
             } else {
                 // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
                 await forceLogout(navigate);
@@ -51,7 +52,14 @@ export const get = async (url, navigate) => {
     }
 };
 
-export const post = async (url, data, navigate) => {
+export const post = async (
+    navigate,
+    url,
+    data,
+    multipartName,
+    multipart,
+    retry = 1
+) => {
     const accessToken = localStorage.getItem("accessToken");
 
     try {
@@ -60,6 +68,36 @@ export const post = async (url, data, navigate) => {
                 Authorization: `Bearer ${accessToken}`,
             },
         };
+
+        if (multipartName !== undefined) {
+            config.headers["Content-Type"] = "multipart/form-data";
+            const form = new FormData();
+            form.append(
+                "data",
+                new Blob([JSON.stringify(data)], {
+                    type: "application/json",
+                })
+            );
+
+            if (multipart && multipart > 0) {
+                const multiPromises = multipart.map(async (multi) => {
+                    if (multi && !(multi instanceof File)) {
+                        const downloadedFile = await urlToFile(
+                            form.filePath,
+                            form.fileName
+                        );
+                        form.append(multipartName, downloadedFile);
+                    } else if (multi instanceof File) {
+                        form.append(multipartName, multi);
+                    }
+                });
+
+                await Promise.all(multiPromises);
+            } else {
+                form.append("attachments", "[]");
+            }
+            data = form;
+        }
 
         const res = await axios.post(
             process.env.REACT_APP_SERVER_URL + url,
@@ -70,23 +108,28 @@ export const post = async (url, data, navigate) => {
         if (res.data.code === 200) {
             // 정상 코드이면 response값 반환
             return res;
+        } else if (res.data.code === 401) {
+            // 토큰 만료로 인한 401
+            const refreshed = await refreshAccessToken();
+            if (refreshed) {
+                return post(
+                    navigate,
+                    url,
+                    data,
+                    multipartName,
+                    multipart,
+                    retry - 1
+                );
+            } else {
+                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
+                await forceLogout(navigate);
+                return res;
+            }
         } else {
             // 200 외의 에러
             throw new Error("failed to post");
         }
     } catch (error) {
-        const status = error.response?.status;
-        if (status === 401) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken(navigate);
-            if (refreshed) {
-                return post(url, data, navigate);
-            } else {
-                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
-                await forceLogout(navigate);
-                return;
-            }
-        }
         // 에러 발생하면 catch
         console.error("🔴error 발생");
         console.error("url : " + url);
@@ -100,7 +143,14 @@ export const post = async (url, data, navigate) => {
         });
     }
 };
-export const put = async (url, data, navigate) => {
+export const put = async (
+    navigate,
+    url,
+    data,
+    multipartName,
+    multipart,
+    retry = 1
+) => {
     const accessToken = localStorage.getItem("accessToken");
 
     try {
@@ -109,6 +159,36 @@ export const put = async (url, data, navigate) => {
                 Authorization: `Bearer ${accessToken}`,
             },
         };
+
+        if (multipartName !== undefined) {
+            config.headers["Content-Type"] = "multipart/form-data";
+            const form = new FormData();
+            form.append(
+                "data",
+                new Blob([JSON.stringify(data)], {
+                    type: "application/json",
+                })
+            );
+
+            if (multipart && multipart.length > 0) {
+                const multiPromises = multipart.map(async (multi) => {
+                    if (multi && !(multi instanceof File)) {
+                        const downloadedFile = await urlToFile(
+                            form.filePath,
+                            form.fileName
+                        );
+                        form.append(multipartName, downloadedFile);
+                    } else if (multi instanceof File) {
+                        form.append(multipartName, multi);
+                    }
+                });
+
+                await Promise.all(multiPromises);
+            } else {
+                form.append("attachments", "[]");
+            }
+            data = form;
+        }
 
         const res = await axios.put(
             process.env.REACT_APP_SERVER_URL + url,
@@ -119,23 +199,28 @@ export const put = async (url, data, navigate) => {
         if (res.data.code === 200) {
             // 정상 코드이면 response값 반환
             return res;
-        } else {
-            // 200 외의 에러
-            throw new Error("failed to put");
-        }
-    } catch (error) {
-        const status = error.response?.status;
-        if (status === 401) {
+        } else if (res.data.code === 401 && retry > 0) {
             // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken(navigate);
+            const refreshed = await refreshAccessToken();
             if (refreshed) {
-                return put(url, data, navigate);
+                return put(
+                    navigate,
+                    url,
+                    data,
+                    multipartName,
+                    multipart,
+                    retry - 1
+                );
             } else {
                 // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
                 await forceLogout(navigate);
                 return;
             }
+        } else {
+            // 200 외의 에러
+            throw new Error("failed to put");
         }
+    } catch (error) {
         // 에러 발생하면 catch
         console.error("🔴error 발생");
         console.error("url : " + url);
@@ -144,12 +229,12 @@ export const put = async (url, data, navigate) => {
             position: "center",
             icon: "error",
             title: "서버 통신 에러",
-            text: "내용 :" + error,
+            text: "내용 : " + error,
             showConfirmButton: true,
         });
     }
 };
-export const del = async (url, navigate) => {
+export const del = async (navigate, url, retry = 1) => {
     const accessToken = localStorage.getItem("accessToken");
 
     try {
@@ -167,23 +252,22 @@ export const del = async (url, navigate) => {
         if (res.data.code === 200) {
             // 정상 코드이면 response값 반환
             return res;
+        } else if (res.data.code === 401 && retry > 0) {
+            // 토큰 만료로 인한 401
+            const refreshed = await refreshAccessToken();
+            if (refreshed) {
+                return del(navigate, url, retry - 1);
+            } else {
+                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
+                await forceLogout(navigate);
+            }
         } else {
             // 200 외의 에러
             throw new Error("failed to delete");
         }
     } catch (error) {
         const status = error.response?.status;
-        if (status === 401) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken(navigate);
-            if (refreshed) {
-                return del(url, navigate);
-            } else {
-                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
-                await forceLogout(navigate);
-                return;
-            }
-        }
+
         // 에러 발생하면 catch
         console.error("🔴error 발생");
         console.error("url : " + url);
@@ -197,7 +281,7 @@ export const del = async (url, navigate) => {
         });
     }
 };
-export const refreshAccessToken = async (navigate) => {
+const refreshAccessToken = async () => {
     try {
         const refreshToken = localStorage.getItem("refreshToken");
         const config = {
@@ -224,8 +308,23 @@ export const refreshAccessToken = async (navigate) => {
         }
     } catch (err) {
         console.error("Token refresh failed", err);
-        await forceLogout(navigate);
+        await forceLogout();
         return false;
+    }
+};
+
+const urlToFile = async (url, fileName) => {
+    try {
+        const response = await fetch(url);
+        console.log(response);
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        const blob = await response.blob();
+        return new File([blob], fileName, { type: blob.type });
+    } catch (error) {
+        console.error("Error fetching file:", error);
+        throw error;
     }
 };
 
@@ -245,7 +344,6 @@ const api = {
     post,
     del,
     put,
-    refreshAccessToken,
 };
 
 export default api;

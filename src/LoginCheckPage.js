@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Button } from "antd";
-import { UserOutlined, LeftOutlined } from "@ant-design/icons"; // 아이콘 추가
+import { useEffect, useState } from "react";
+import { UserOutlined } from "@ant-design/icons"; // 아이콘 추가
 import styles from "./css/SettingPage.module.css"; // 스타일 시트 임포트
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 import { showLoginRequired } from "./security/ErrorController";
 
 const LoginCheckPage = () => {
@@ -25,10 +24,10 @@ const LoginCheckPage = () => {
 
     const fetchProfileImage = async () => {
         const res = await api.get(
+            navigate,
             `/api/member/memberProfileImageUrlReq?memberId=${localStorage.getItem(
                 "userId"
-            )}`,
-            navigate
+            )}`
         );
 
         console.log(res);
@@ -51,14 +50,10 @@ const LoginCheckPage = () => {
     }, []);
 
     const handleLogin = async () => {
-        const res = await api.post(
-            "/api/member/checkPassword",
-            {
-                id: userInfo.id,
-                password: userInfo.password,
-            },
-            navigate
-        );
+        const res = await api.post(navigate, "/api/member/checkPassword", {
+            id: userInfo.id,
+            password: userInfo.password,
+        });
         if (res.data.data) {
             console.log("success");
             navigate(`/setting`, { state: userInfo });

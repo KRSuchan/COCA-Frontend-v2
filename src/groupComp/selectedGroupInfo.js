@@ -1,8 +1,8 @@
 // SelectedGroupInfo.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { UserOutlined } from "@ant-design/icons"; // 사람 아이콘을 위한 import
 import styles from "../css/GroupPage.module.css";
-import api from "../security/TokenManage";
+import api from "../security/CocaApi";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -31,10 +31,10 @@ const SelectedGroupInfo = ({ groupId }) => {
 
     const fetchGroupData = async () => {
         const res = await api.get(
+            navigate,
             `/api/group/detail?memberId=${localStorage.getItem(
                 "userId"
-            )}&groupId=${groupId}`,
-            navigate
+            )}&groupId=${groupId}`
         );
         console.log(res);
         if (res) return res.data.data;
@@ -65,7 +65,7 @@ const SelectedGroupInfo = ({ groupId }) => {
                 privatePassword: pw,
             },
         };
-        const res = await api.post("/api/group/join", data, navigate);
+        const res = await api.post(navigate, "/api/group/join", data);
         if (res) return true;
         else return false;
     };
@@ -151,11 +151,11 @@ const SelectedGroupInfo = ({ groupId }) => {
 
     const inviteGroup = async (groupId, inviteId) => {
         const res = await api.post(
+            navigate,
             `/api/request/add/group-invite/from/${localStorage.getItem(
                 "userId"
             )}/to/${inviteId}/group/${groupId}`,
-            null,
-            navigate
+            null
         );
         if (res) return 200;
         else return 404;

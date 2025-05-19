@@ -1,12 +1,10 @@
 // MainCalendar.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
-import axios from "axios";
-import { useSelector, useDispatch } from "react-redux";
-import api from "../security/TokenManage";
+import { useSelector } from "react-redux";
+import api from "../security/CocaApi";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 
 moment.locale("ko");
 
@@ -16,10 +14,11 @@ const localizer = momentLocalizer(moment);
 const getPersonalSchedule = async (id, startDate, endDate, navigate) => {
     console.log("Get Personal Schedule");
     const res = await api.get(
-        `/api/personal-schedule/summary/between-dates?memberId=${id}&startDate=${startDate}&endDate=${endDate}`,
-        navigate
+        navigate,
+        `/api/personal-schedule/summary/between-dates?memberId=${id}&startDate=${startDate}&endDate=${endDate}`
     );
     if (res) return res.data.data;
+    else return null;
 };
 
 const getGroupScehdule = async (
@@ -29,47 +28,14 @@ const getGroupScehdule = async (
     endDate,
     navigate
 ) => {
-    const accessToken = localStorage.getItem("accessToken");
+    console.log("Get Group Schedule");
+    const res = await api.get(
+        navigate,
+        `/api/group-schedule/summary?groupId=${groupId}&memberId=${memberId}&startDate=${startDate}&endDate=${endDate}`
+    );
 
-    try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-            params: {
-                groupId: groupId,
-                memberId: memberId,
-                startDate: startDate,
-                endDate: endDate,
-            },
-        };
-
-        const res = await axios.get(
-            process.env.REACT_APP_SERVER_URL +
-                `/api/group-schedule/groupScheduleSummaryReq`,
-            config
-        );
-
-        if (res.data.code === 200) {
-            return res.data.data;
-        } else if (res.data.code === 401) {
-            await api.refreshAccessToken(navigate);
-            getGroupScehdule(groupId, memberId, startDate, endDate, navigate);
-        } else {
-            throw new Error("unknown Error");
-        }
-    } catch (error) {
-        console.error("그룹 일정 불러오기 에러 :", error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "에러!",
-            text: "서버와의 통신에 문제가 생겼어요!",
-            showConfirmButton: false,
-            timer: 1500,
-        });
-        return null;
-    }
+    if (res.data.code === 200) return res.data.data;
+    else return null;
 };
 
 const MainCalendar = ({ onSlotSelect }) => {

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Button, List, Avatar, Modal, Input } from "antd"; // Modal, Input 추가
+import { useState, useEffect } from "react";
+import { Button, Avatar, Modal, Input } from "antd"; // Modal, Input 추가
 import { useNavigate } from "react-router-dom";
 import styles from "./css/FriendsPage.module.css";
 import {
@@ -16,7 +16,7 @@ import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
 import getDay from "date-fns/getDay";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 import Swal from "sweetalert2";
 import { ko } from "date-fns/locale"; // 한글 로케일 추가
 import { showLoginRequired } from "./security/ErrorController";
@@ -46,8 +46,8 @@ const FriendsPage = () => {
 
     const fetchFriendList = async () => {
         const res = await api.get(
-            `/api/friend/list/memberId/${localStorage.getItem("userId")}`,
-            navigate
+            navigate,
+            `/api/friend/list/memberId/${localStorage.getItem("userId")}`
         );
         if (res) return res.data;
     };
@@ -84,8 +84,8 @@ const FriendsPage = () => {
 
     const getFriendCalendar = async (friendid) => {
         const res = await api.get(
-            `/api/friend/schedule/friendId/${friendid}`,
-            navigate
+            navigate,
+            `/api/friend/schedule/friendId/${friendid}`
         );
         return res.data;
     };
@@ -130,17 +130,13 @@ const FriendsPage = () => {
     };
 
     const updateFriendProfile = async () => {
-        const res = await api.put(
-            "/api/friend/update",
-            {
-                id: selectedFriend.friendId,
-                member: {
-                    id: localStorage.getItem("userId"),
-                },
-                opponentNickname: friendNameForUpdate,
+        const res = await api.put(navigate, "/api/friend/update", {
+            id: selectedFriend.friendId,
+            member: {
+                id: localStorage.getItem("userId"),
             },
-            navigate
-        );
+            opponentNickname: friendNameForUpdate,
+        });
     };
 
     const handleEditClick = (friend) => {
@@ -158,11 +154,11 @@ const FriendsPage = () => {
 
     const addFriend = async () => {
         const res = await api.post(
+            navigate,
             `/api/request/add/friend/from/${localStorage.getItem(
                 "userId"
             )}/to/${newFriendId}`,
-            null,
-            navigate
+            null
         );
 
         setAddModalVisible(false);
@@ -192,7 +188,7 @@ const FriendsPage = () => {
     };
 
     const deleteFriend = async (friendId) => {
-        const res = await api.del(`/api/friend/delete/${friendId}`, navigate);
+        const res = await api.del(navigate, `/api/friend/delete/${friendId}`);
         if (res) return true;
         else return false;
     };

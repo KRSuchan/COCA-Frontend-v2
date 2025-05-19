@@ -1,7 +1,7 @@
 // MiniCalendar.js
-import React, { useState } from 'react';
-import RCalendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import { useState } from "react";
+import RCalendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 const MiniCalendar = () => {
     const [date, setDate] = useState(new Date());
@@ -11,7 +11,7 @@ const MiniCalendar = () => {
     };
 
     const formatShortWeekday = (locale, date) => {
-        return ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+        return ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
     };
 
     const formatDay = (locale, date) => {
@@ -20,9 +20,9 @@ const MiniCalendar = () => {
 
     return (
         <div className="calendar-component">
-            <RCalendar 
-                onChange={onChange} 
-                value={date} 
+            <RCalendar
+                onChange={onChange}
+                value={date}
                 formatShortWeekday={formatShortWeekday}
                 formatDay={formatDay}
             />

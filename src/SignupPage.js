@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./css/SignupPage.css"; // 스타일시트 임포트
 import Swal from "sweetalert2";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 
 function SignUpPage() {
     const navigate = useNavigate();
@@ -35,13 +35,9 @@ function SignUpPage() {
 
     const handleDuplicateCheck = async () => {
         // 통신 구현 필요
-        const res = await api.post(
-            "/api/member/validate-id",
-            {
-                id: userId,
-            },
-            navigate
-        );
+        const res = await api.post(navigate, "/api/member/validate-id", {
+            id: userId,
+        });
 
         console.log(res);
 
@@ -76,7 +72,7 @@ function SignUpPage() {
 
     const fetchTagList = async () => {
         try {
-            const res = await api.get("/api/tag/all", navigate);
+            const res = await api.get(navigate, "/api/tag/all");
             console.log(res.data);
 
             return res.data;

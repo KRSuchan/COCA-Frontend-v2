@@ -19,7 +19,7 @@ import { UserOutlined } from "@ant-design/icons"; // antd 아이콘 추가
 import Swal from "sweetalert2"; // Swal 추가
 import { useSelector } from "react-redux";
 import { showLoginRequired } from "./security/ErrorController";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -69,8 +69,8 @@ const PowerEmptySchedule = () => {
 
     const fetchFriendList = async () => {
         const res = await api.get(
-            `/api/friend/list/memberId/${localStorage.getItem("userId")}`,
-            navigate
+            navigate,
+            `/api/friend/list/memberId/${localStorage.getItem("userId")}`
         );
         if (res.data.code === 200) {
             return res.data.data; // 수정된 부분
@@ -93,10 +93,10 @@ const PowerEmptySchedule = () => {
 
     const fetchGroupMembers = async (group) => {
         const res = await api.get(
+            navigate,
             `/api/group/list/members/member/${localStorage.getItem(
                 "userId"
-            )}/group/${group.groupId}`,
-            navigate
+            )}/group/${group.groupId}`
         );
 
         if (res.data.code === 200) {
@@ -171,9 +171,9 @@ const PowerEmptySchedule = () => {
         console.log("data", data);
 
         const res = await api.post(
+            navigate,
             "/api/commonscheduleController/memberScheduleReq",
-            data,
-            navigate
+            data
         );
 
         console.log("mem", res);
@@ -231,9 +231,9 @@ const PowerEmptySchedule = () => {
         console.log("toDate", range[0].toDate());
 
         const res = await api.post(
+            navigate,
             "/api/commonscheduleController/findEmptyScheduleReq",
-            data,
-            navigate
+            data
         );
 
         console.log(res);
@@ -436,7 +436,7 @@ const PowerEmptySchedule = () => {
 
         console.log("da", data);
 
-        const res = await api.post("/api/request/add/schedule", data, navigate);
+        const res = await api.post(navigate, "/api/request/add/schedule", data);
 
         if (res.data.code === 201) {
             return true;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 import "./css/LoginPage.css";
 import Swal from "sweetalert2";
 import { useDispatch } from "react-redux";
@@ -37,7 +37,7 @@ function LoginPage() {
     };
 
     const login = () => {
-        api.post("/api/member/loginReq", {
+        api.post(navigate, "/api/member/loginReq", {
             id: userId,
             password: password,
         })

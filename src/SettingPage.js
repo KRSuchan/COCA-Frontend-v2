@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { UserOutlined, EditOutlined } from "@ant-design/icons"; // 아이콘 추가
 import styles from "./css/SettingPage.module.css"; // 스타일 시트 임포트
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import Swal from "sweetalert2";
-import { refreshAccessToken } from "./security/TokenManage";
 import { showLoginRequired } from "./security/ErrorController";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 
 const SettingPage = () => {
     useEffect(() => {
@@ -47,7 +45,6 @@ const SettingPage = () => {
     const [originalProfileImgPath, setOriginalProfileImgPath] = useState("");
     const [interests, setInterests] = useState(["", "", ""]);
 
-    // handleInterestChange : 관심사 선택 동작
     const handleInterestChange = (index, event) => {
         const value = event.target.value;
         setInterests((prevInterests) => {
@@ -60,7 +57,7 @@ const SettingPage = () => {
     const [tagList, setTagList] = useState([]);
 
     const fetchTagList = async () => {
-        const res = await api.get("/api/tag/all", navigate);
+        const res = await api.get(navigate, "/api/tag/all");
         return res.data;
     };
 
@@ -130,12 +127,12 @@ const SettingPage = () => {
     // fetchUserInfo : 회원 정보 조회 api 요청
     const fetchUserInfo = async () => {
         const res = await api.post(
+            navigate,
             "/api/member/memberInfoInquiryReq",
             {
                 id: state.id,
                 password: state.password,
-            },
-            navigate
+            }
         );
         if (res.data.code === 200) {
             return res.data.data;
@@ -143,7 +140,6 @@ const SettingPage = () => {
     };
     // updateMember : 회원 정보 수정 api 요청
     const updateMember = async () => {
-        const accessToken = localStorage.getItem("accessToken");
         try {
             let data = userInfo;
             const interestData = interests
@@ -178,38 +174,18 @@ const SettingPage = () => {
                     interestId: interestData,
                 };
             }
-            const formData = new FormData();
-            formData.append(
-                "data",
-                new Blob([JSON.stringify(data)], { type: "application/json" })
+            const res = await api.put(
+                navigate,
+                "/api/member/update",
+                data,
+                "profileImage",
+                profileImageFile
             );
-            if (profileImageFile) {
-                formData.append("profileImage", profileImageFile);
-            } else {
-                formData.append("profileImage", "[]");
-            }
-            console.log("pro", profileImageFile);
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            };
-            const res = await axios.post(
-                process.env.REACT_APP_SERVER_URL +
-                    "/api/member/memberInfoUpdateReq",
-                formData,
-                config
-            );
-            console.log(res);
             if (res.data.code === 200) {
                 state.password = data.password;
                 state.profileImgPath = res.data.data.profileImgPath;
                 setUserInfo({ ...userInfo, password: "" });
                 return true;
-            } else if (res.data.code === 401) {
-                await refreshAccessToken(navigate);
-                updateMember();
             } else {
                 return false;
             }
@@ -265,14 +241,10 @@ const SettingPage = () => {
         });
     };
     const deleteMember = async (password) => {
-        const res = await api.post(
-            "/api/member/withdrawalReq",
-            {
-                id: userInfo.id,
-                password: password,
-            },
-            navigate
-        );
+        const res = await api.post(navigate, "/api/member/withdrawalReq", {
+            id: userInfo.id,
+            password: password,
+        });
         if (res.data.data) {
             return res.data.data;
         }

@@ -17,7 +17,7 @@ import ButtonPanel from "./components/ButtonPanel";
 import AddSchedulePage from "./components/AddSchedulePage";
 import MainLogo from "./components/MainLogo";
 import { useNavigate } from "react-router-dom";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 import { showLoginRequired } from "./security/ErrorController";
 
 moment.locale("ko");
@@ -28,8 +28,8 @@ const localizer = momentLocalizer(moment);
 // 일정 상세 통신
 const getPersonalDetailSchedule = async (id, startDate, endDate, navigate) => {
     const res = await api.get(
-        `/api/personal-schedule/detail/date?memberId=${id}&date=${startDate}`,
-        navigate
+        navigate,
+        `/api/personal-schedule/detail/date?memberId=${id}&date=${startDate}`
     );
     if (res.data.code === 200) {
         return res.data;
@@ -43,8 +43,8 @@ const getGroupDetailSchedule = async (
     navigate
 ) => {
     const res = await api.get(
-        `/api/group-schedule/groupScheduleSpecificReq`,
-        navigate
+        navigate,
+        `/api/group-schedule/groupScheduleSpecificReq`
     );
     if (res.data.code === 200) {
         return res.data;
@@ -67,7 +67,7 @@ const setGroups = (groups) => {
 };
 
 const getGroupList = async (id, navigate) => {
-    const res = await api.get(`/api/calendar/member/${id}`, navigate);
+    const res = await api.get(navigate, `/api/calendar/member/${id}`);
     if (res.data.code === 200) {
         return res.data.data;
     } else return [];

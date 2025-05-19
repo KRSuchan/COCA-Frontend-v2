@@ -5,7 +5,7 @@ import { Tabs, Card, Avatar, Button } from "antd";
 import styles from "./css/NoticePage.module.css";
 import Swal from "sweetalert2";
 import { showLoginRequired } from "./security/ErrorController";
-import api from "./security/TokenManage";
+import api from "./security/CocaApi";
 const { TabPane } = Tabs;
 
 const NoticePage = () => {
@@ -93,10 +93,10 @@ const NoticePage = () => {
 
     const fetchScheduleRequestData = async () => {
         const res = await api.get(
+            navigate,
             `/api/request/list/schedule/member/${localStorage.getItem(
                 "userId"
-            )}`,
-            navigate
+            )}`
         );
         if (res.data.code === 200) {
             return res.data.data;
@@ -105,8 +105,8 @@ const NoticePage = () => {
 
     const fetchFriendRequestData = async () => {
         const res = await api.get(
-            `/api/request/list/friend/member/${localStorage.getItem("userId")}`,
-            navigate
+            navigate,
+            `/api/request/list/friend/member/${localStorage.getItem("userId")}`
         );
         if (res.data.code === 200) {
             return res.data.data;
@@ -115,10 +115,10 @@ const NoticePage = () => {
 
     const fetchGroupRequestData = async () => {
         const res = await api.get(
+            navigate,
             `/api/request/list/group-invite/member/${localStorage.getItem(
                 "userId"
-            )}`,
-            navigate
+            )}`
         );
         if (res.data.code === 200) {
             return res.data.data;
@@ -127,14 +127,10 @@ const NoticePage = () => {
 
     // 일정 통신
     const updateScheduleRequest = async (id, status) => {
-        const res = await api.put(
-            "/api/request/update/schedule",
-            {
-                requestId: id,
-                status: status,
-            },
-            navigate
-        );
+        const res = await api.put(navigate, "/api/request/update/schedule", {
+            requestId: id,
+            status: status,
+        });
         if (res.data.code === 200) {
             return true;
         } else return false;
@@ -142,8 +138,8 @@ const NoticePage = () => {
 
     const deleteScheduleRequest = async (id) => {
         const res = await api.del(
-            `/api/request/delete/schedule/${id}`,
-            navigate
+            navigate,
+            `/api/request/delete/schedule/${id}`
         );
         if (res.data.code === 200) {
             return true;
@@ -206,14 +202,10 @@ const NoticePage = () => {
 
     // 친구 통신
     const updateFriendRequest = async (id, status) => {
-        const res = await api.put(
-            "/api/request/update/friend",
-            {
-                requestId: id,
-                status: status,
-            },
-            navigate
-        );
+        const res = await api.put(navigate, "/api/request/update/friend", {
+            requestId: id,
+            status: status,
+        });
         if (res.data.code === 200) {
             return true;
         } else return false;
@@ -221,8 +213,8 @@ const NoticePage = () => {
 
     const deleteFriendRequest = async (id) => {
         const res = await api.delete(
-            `/api/request/delete/friend/${id}`,
-            navigate
+            navigate,
+            `/api/request/delete/friend/${id}`
         );
         return false;
     };
@@ -284,12 +276,12 @@ const NoticePage = () => {
     // 그룹 통신
     const updateGroupRequest = async (id, status) => {
         const res = await api.put(
+            navigate,
             "/api/request/update/group-invite",
             {
                 requestId: id,
                 status: status,
-            },
-            navigate
+            }
         );
         if (res.data.code === 200) {
             return true;
@@ -298,8 +290,8 @@ const NoticePage = () => {
 
     const deleteGroupRequest = async (id) => {
         const res = await api.delete(
-            `/api/request/delete/group-invite/${id}`,
-            navigate
+            navigate,
+            `/api/request/delete/group-invite/${id}`
         );
 
         if (res.data.code === 200) {

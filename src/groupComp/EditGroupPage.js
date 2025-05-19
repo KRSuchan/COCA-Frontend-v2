@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { UserOutlined } from "@ant-design/icons";
 import styles from "../css/GroupPage.module.css";
-import api from "../security/TokenManage";
+import api from "../security/CocaApi";
 import Swal from "sweetalert2";
 import { useDispatch } from "react-redux";
 import { Modal, Button } from "antd";
@@ -117,7 +117,7 @@ const EditGroupPage = () => {
             },
         };
 
-        const res = await api.post(`/api/group/admin`, data, navigate);
+        const res = await api.post(navigate, `/api/group/admin`, data);
 
         return res.data;
         // 403 접근 제한 에러일 경우
@@ -136,25 +136,23 @@ const EditGroupPage = () => {
     // 백엔드에서 태그 목록을 가져오는 함수
     const fetchTags = async () => {
         // TODO: 백엔드 API 호출 로직 구현
-        const res = await api.get("/api/tag/all", navigate);
+        const res = await api.get(navigate, "/api/tag/all");
         return res.data;
     };
 
     // 백엔드에서 멤버 목록을 가져오는 함수
     const fetchMembers = async () => {
         const res = await api.get(
+            navigate,
             `/api/group/list/members/member/${localStorage.getItem(
                 "userId"
-            )}/group/${groupId}`,
-            navigate
+            )}/group/${groupId}`
         );
         return res.data.data;
     };
 
     const updateGroup = async () => {
         // TODO: 백엔드에 그룹 정보를 저장하는 로직 구현
-        const accessToken = localStorage.getItem("accessToken");
-
         const originalManagerIds = originalManager.map((manager) => manager.id); // originalManager의 id들만 추출
 
         const member2manager = groupDetails.groupManagers.filter(
@@ -193,9 +191,7 @@ const EditGroupPage = () => {
             managersToMember: manager2member,
         };
 
-        console.log(groupData);
-
-        const res = await api.put("/api/group/update", groupData, navigate);
+        const res = await api.put(navigate, "/api/group/update", groupData);
         if (res) return true;
         else return false;
     };
@@ -244,10 +240,10 @@ const EditGroupPage = () => {
 
     const deleteGroup = async () => {
         const res = await api.del(
+            navigate,
             `/api/group/delete?adminId=${localStorage.getItem(
                 "userId"
-            )}&groupId=${groupId}`,
-            navigate
+            )}&groupId=${groupId}`
         );
         if (res) return true;
         else return false;
@@ -270,9 +266,9 @@ const EditGroupPage = () => {
                     password: password,
                 };
                 const res = await api.post(
+                    navigate,
                     "/api/member/checkPassword",
-                    data,
-                    navigate
+                    data
                 );
                 if (!res) {
                     return Swal.showValidationMessage("비밀번호가 달라요!");

@@ -1,11 +1,11 @@
 // GroupsList.js
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { ListGroup } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { SettingOutlined, DeleteOutlined } from "@ant-design/icons";
 import Swal from "sweetalert2";
-import api from "../security/TokenManage";
+import api from "../security/CocaApi";
 
 const GroupsList = () => {
     const groups = useSelector((state) => state.groups);
@@ -17,10 +17,10 @@ const GroupsList = () => {
 
     const quitGroup = async (group) => {
         const res = await api.del(
+            navigate,
             `/api/group/leave/member/${localStorage.getItem("userId")}/group/${
                 group.groupId
-            }`,
-            navigate
+            }`
         );
         return res.data;
     };

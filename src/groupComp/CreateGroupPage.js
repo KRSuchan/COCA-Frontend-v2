@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import styles from "../css/GroupPage.module.css";
 import { useNavigate } from "react-router-dom";
-import api from "../security/TokenManage";
+import api from "../security/CocaApi";
 import Swal from "sweetalert2";
 
 const CreateGroupPage = () => {
@@ -19,7 +19,7 @@ const CreateGroupPage = () => {
     const navigate = useNavigate();
 
     const fetchInterestOptions = async () => {
-        const res = await api.get("/api/tag/all", navigate);
+        const res = await api.get(navigate, "/api/tag/all");
         console.log("tag", res.data);
         return res.data;
     };
@@ -61,7 +61,7 @@ const CreateGroupPage = () => {
                 }),
         };
 
-        const res = await api.post("/api/group/add", groupData, navigate);
+        const res = await api.post(navigate, "/api/group/add", groupData);
         if (res) {
             Swal.fire({
                 position: "center",
