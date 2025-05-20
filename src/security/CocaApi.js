@@ -3,41 +3,35 @@ import Swal from "sweetalert2";
 
 export const get = async (navigate, url, retry = 1) => {
     const accessToken = localStorage.getItem("accessToken");
-
+    const config = {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
     try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
         const res = await axios.get(
             process.env.REACT_APP_SERVER_URL + url,
             config
         );
-        console.log(res);
-
-        if (res.data.code === 200) {
+        const code = res.data.code;
+        if (code === 200 || code === 201) {
             // 정상 코드이면 response값 반환
             return res;
+        } else if (code === 401 && retry > 0) {
+            // 토큰 만료로 인한 401
+            const refreshed = await refreshAccessToken();
+            if (refreshed) {
+                return get(navigate, url, retry - 1);
+            } else {
+                await forceLogout(navigate);
+                return res;
+            }
         } else {
             // 200외의 에러
             console.error(res.data.code);
             throw new Error("failed to get");
         }
     } catch (error) {
-        const status = error.response?.status;
-        if (status === 401 && retry > 0) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                return get(navigate, url, retry - 1);
-            } else {
-                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
-                await forceLogout(navigate);
-                return;
-            }
-        }
         // 에러 발생하면 catch
         console.error("🔴error 발생");
         console.error("url : " + url);
@@ -57,58 +51,29 @@ export const post = async (
     url,
     data,
     multipartName,
-    multipart,
+    multiparts,
     retry = 1
 ) => {
     const accessToken = localStorage.getItem("accessToken");
-
+    const config = {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+    if (multipartName != undefined) {
+        data = await makeForm(data, multipartName, multiparts);
+    }
     try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
-        if (multipartName !== undefined) {
-            config.headers["Content-Type"] = "multipart/form-data";
-            const form = new FormData();
-            form.append(
-                "data",
-                new Blob([JSON.stringify(data)], {
-                    type: "application/json",
-                })
-            );
-
-            if (multipart && multipart > 0) {
-                const multiPromises = multipart.map(async (multi) => {
-                    if (multi && !(multi instanceof File)) {
-                        const downloadedFile = await urlToFile(
-                            form.filePath,
-                            form.fileName
-                        );
-                        form.append(multipartName, downloadedFile);
-                    } else if (multi instanceof File) {
-                        form.append(multipartName, multi);
-                    }
-                });
-
-                await Promise.all(multiPromises);
-            } else {
-                form.append("attachments", "[]");
-            }
-            data = form;
-        }
-
         const res = await axios.post(
             process.env.REACT_APP_SERVER_URL + url,
             data,
             config
         );
-
-        if (res.data.code === 200) {
+        const code = res.data.code;
+        if (code === 200 || code === 201) {
             // 정상 코드이면 response값 반환
             return res;
-        } else if (res.data.code === 401) {
+        } else if (code === 401) {
             // 토큰 만료로 인한 401
             const refreshed = await refreshAccessToken();
             if (refreshed) {
@@ -117,7 +82,7 @@ export const post = async (
                     url,
                     data,
                     multipartName,
-                    multipart,
+                    multiparts,
                     retry - 1
                 );
             } else {
@@ -148,58 +113,29 @@ export const put = async (
     url,
     data,
     multipartName,
-    multipart,
+    multiparts,
     retry = 1
 ) => {
     const accessToken = localStorage.getItem("accessToken");
-
+    const config = {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
+    if (multipartName != undefined) {
+        data = await makeForm(data, multipartName, multiparts);
+    }
     try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
-        if (multipartName !== undefined) {
-            config.headers["Content-Type"] = "multipart/form-data";
-            const form = new FormData();
-            form.append(
-                "data",
-                new Blob([JSON.stringify(data)], {
-                    type: "application/json",
-                })
-            );
-
-            if (multipart && multipart.length > 0) {
-                const multiPromises = multipart.map(async (multi) => {
-                    if (multi && !(multi instanceof File)) {
-                        const downloadedFile = await urlToFile(
-                            form.filePath,
-                            form.fileName
-                        );
-                        form.append(multipartName, downloadedFile);
-                    } else if (multi instanceof File) {
-                        form.append(multipartName, multi);
-                    }
-                });
-
-                await Promise.all(multiPromises);
-            } else {
-                form.append("attachments", "[]");
-            }
-            data = form;
-        }
-
         const res = await axios.put(
             process.env.REACT_APP_SERVER_URL + url,
             data,
             config
         );
-
-        if (res.data.code === 200) {
+        const code = res.data.code;
+        if (code === 200 || code === 201) {
             // 정상 코드이면 response값 반환
             return res;
-        } else if (res.data.code === 401 && retry > 0) {
+        } else if (code === 401 && retry > 0) {
             // 토큰 만료로 인한 401
             const refreshed = await refreshAccessToken();
             if (refreshed) {
@@ -208,7 +144,7 @@ export const put = async (
                     url,
                     data,
                     multipartName,
-                    multipart,
+                    multiparts,
                     retry - 1
                 );
             } else {
@@ -237,22 +173,21 @@ export const put = async (
 export const del = async (navigate, url, retry = 1) => {
     const accessToken = localStorage.getItem("accessToken");
 
+    const config = {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    };
     try {
-        const config = {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        };
-
         const res = await axios.delete(
             process.env.REACT_APP_SERVER_URL + url,
             config
         );
-
-        if (res.data.code === 200) {
+        const code = res.data.code;
+        if (code === 200 || code === 201) {
             // 정상 코드이면 response값 반환
             return res;
-        } else if (res.data.code === 401 && retry > 0) {
+        } else if (code === 401 && retry > 0) {
             // 토큰 만료로 인한 401
             const refreshed = await refreshAccessToken();
             if (refreshed) {
@@ -266,8 +201,6 @@ export const del = async (navigate, url, retry = 1) => {
             throw new Error("failed to delete");
         }
     } catch (error) {
-        const status = error.response?.status;
-
         // 에러 발생하면 catch
         console.error("🔴error 발생");
         console.error("url : " + url);
@@ -338,7 +271,37 @@ const forceLogout = async (navigate) => {
         navigate("/");
     });
 };
+const makeForm = async (data, multipartName, multiparts) => {
+    const form = new FormData();
+    form.append(
+        "data",
+        new Blob([JSON.stringify(data)], {
+            type: "application/json",
+        })
+    );
+    let tempMulti = multiparts;
+    if (multiparts[0] === null && multiparts[1] === null) {
+        tempMulti = null;
+    }
+    if (tempMulti && tempMulti.length > 0) {
+        const multiPromises = tempMulti.map(async (multi) => {
+            if (multi && !(multi instanceof File)) {
+                const downloadedFile = await urlToFile(
+                    multi.filePath,
+                    multi.fileName
+                );
+                form.append(multipartName, downloadedFile);
+            } else if (multi instanceof File) {
+                form.append(multipartName, multi);
+            }
+        });
 
+        await Promise.all(multiPromises);
+    } else {
+        form.append("attachments", "[]");
+    }
+    return form;
+};
 const api = {
     get,
     post,
