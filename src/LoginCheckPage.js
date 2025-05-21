@@ -23,18 +23,19 @@ const LoginCheckPage = () => {
     });
 
     const fetchProfileImage = async () => {
-        const res = await api.get(
-            navigate,
-            `/api/member/memberProfileImageUrlReq?memberId=${localStorage.getItem(
-                "userId"
-            )}`
-        );
-
-        console.log(res);
-
-        if (res.data.code === 200) {
-            return res.data.data;
-        } else return null;
+        try {
+            const res = await api.get(
+                navigate,
+                `/api/member/memberProfileImageUrlReq?memberId=${localStorage.getItem(
+                    "userId"
+                )}`
+            );
+            if (res.data.code === 200) {
+                return res.data.data;
+            } else return null;
+        } catch (error) {
+            return null;
+        }
     };
 
     useEffect(() => {

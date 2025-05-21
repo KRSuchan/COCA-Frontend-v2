@@ -1,51 +1,26 @@
 import axios from "axios";
 import Swal from "sweetalert2";
 
+// GET
 export const get = async (navigate, url, retry = 1) => {
-    const accessToken = localStorage.getItem("accessToken");
-    const config = {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    };
     try {
+        let config = getAuthConfig();
         const res = await axios.get(
             process.env.REACT_APP_SERVER_URL + url,
             config
         );
-        const code = res.data.code;
-        if (code === 200 || code === 201) {
-            // 정상 코드이면 response값 반환
-            return res;
-        } else if (code === 401 && retry > 0) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                return get(navigate, url, retry - 1);
-            } else {
-                await forceLogout(navigate);
-                return res;
-            }
-        } else {
-            // 200외의 에러
-            console.error(res.data.code);
-            throw new Error("failed to get");
-        }
-    } catch (error) {
-        // 에러 발생하면 catch
-        console.error("🔴error 발생");
-        console.error("url : " + url);
-        console.error("error message : " + error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "서버 통신 에러",
-            text: "내용 :" + error,
-            showConfirmButton: true,
+        return await handleResponse({
+            res,
+            retry,
+            retryFunc: (r) => get(navigate, url, r),
+            navigate,
         });
+    } catch (error) {
+        handleError(url, error);
     }
 };
 
+// POST
 export const post = async (
     navigate,
     url,
@@ -54,60 +29,29 @@ export const post = async (
     multiparts,
     retry = 1
 ) => {
-    const accessToken = localStorage.getItem("accessToken");
-    const config = {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    };
-    if (multipartName != undefined) {
-        data = await makeForm(data, multipartName, multiparts);
-    }
     try {
+        let config = getAuthConfig();
+        if (multipartName != undefined) {
+            data = await makeForm(data, multipartName, multiparts);
+        }
         const res = await axios.post(
             process.env.REACT_APP_SERVER_URL + url,
             data,
             config
         );
-        const code = res.data.code;
-        if (code === 200 || code === 201) {
-            // 정상 코드이면 response값 반환
-            return res;
-        } else if (code === 401) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                return post(
-                    navigate,
-                    url,
-                    data,
-                    multipartName,
-                    multiparts,
-                    retry - 1
-                );
-            } else {
-                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
-                await forceLogout(navigate);
-                return res;
-            }
-        } else {
-            // 200 외의 에러
-            throw new Error("failed to post");
-        }
-    } catch (error) {
-        // 에러 발생하면 catch
-        console.error("🔴error 발생");
-        console.error("url : " + url);
-        console.error("error message : " + error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "서버 통신 에러",
-            text: "내용 :" + error,
-            showConfirmButton: true,
+        return await handleResponse({
+            res,
+            retry,
+            retryFunc: (r) =>
+                post(navigate, url, data, multipartName, multiparts, r),
+            navigate,
         });
+    } catch (error) {
+        handleError(url, error);
     }
 };
+
+// PUT
 export const put = async (
     navigate,
     url,
@@ -116,113 +60,50 @@ export const put = async (
     multiparts,
     retry = 1
 ) => {
-    const accessToken = localStorage.getItem("accessToken");
-    const config = {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    };
-    if (multipartName != undefined) {
-        data = await makeForm(data, multipartName, multiparts);
-    }
     try {
+        let config = getAuthConfig();
+        if (multipartName != undefined) {
+            data = await makeForm(data, multipartName, multiparts);
+        }
         const res = await axios.put(
             process.env.REACT_APP_SERVER_URL + url,
             data,
             config
         );
-        const code = res.data.code;
-        if (code === 200 || code === 201) {
-            // 정상 코드이면 response값 반환
-            return res;
-        } else if (code === 401 && retry > 0) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                return put(
-                    navigate,
-                    url,
-                    data,
-                    multipartName,
-                    multiparts,
-                    retry - 1
-                );
-            } else {
-                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
-                await forceLogout(navigate);
-                return;
-            }
-        } else {
-            // 200 외의 에러
-            throw new Error("failed to put");
-        }
-    } catch (error) {
-        // 에러 발생하면 catch
-        console.error("🔴error 발생");
-        console.error("url : " + url);
-        console.error("error message : " + error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "서버 통신 에러",
-            text: "내용 : " + error,
-            showConfirmButton: true,
+        return handleResponse({
+            res,
+            retry,
+            retryFunc: (r) =>
+                put(navigate, url, data, multipartName, multiparts, r),
+            navigate,
         });
+    } catch (error) {
+        handleError(url, error);
     }
 };
-export const del = async (navigate, url, retry = 1) => {
-    const accessToken = localStorage.getItem("accessToken");
 
-    const config = {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    };
+// DELETE
+export const del = async (navigate, url, retry = 1) => {
     try {
+        let config = getAuthConfig();
         const res = await axios.delete(
             process.env.REACT_APP_SERVER_URL + url,
             config
         );
-        const code = res.data.code;
-        if (code === 200 || code === 201) {
-            // 정상 코드이면 response값 반환
-            return res;
-        } else if (code === 401 && retry > 0) {
-            // 토큰 만료로 인한 401
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                return del(navigate, url, retry - 1);
-            } else {
-                // refresh 실패 시 리다이렉트만 하고 Swal 없이 종료
-                await forceLogout(navigate);
-            }
-        } else {
-            // 200 외의 에러
-            throw new Error("failed to delete");
-        }
-    } catch (error) {
-        // 에러 발생하면 catch
-        console.error("🔴error 발생");
-        console.error("url : " + url);
-        console.error("error message : " + error);
-        Swal.fire({
-            position: "center",
-            icon: "error",
-            title: "서버 통신 에러",
-            text: "내용 :" + error,
-            showConfirmButton: true,
+        return await handleResponse({
+            res,
+            retry,
+            retryFunc: (r) => del(navigate, url, r),
+            navigate,
         });
+    } catch (error) {
+        handleError(url, error);
     }
 };
+
 const refreshAccessToken = async () => {
     try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        const config = {
-            headers: {
-                Authorization: `Bearer ${refreshToken}`,
-            },
-        };
-
+        const config = getAuthConfig("refreshToken");
         const response = await axios.post(
             process.env.REACT_APP_SERVER_URL + "/api/jwt/reissue",
             null,
@@ -246,10 +127,20 @@ const refreshAccessToken = async () => {
     }
 };
 
+const forceLogout = async (navigate) => {
+    localStorage.clear();
+    Swal.fire({
+        icon: "error",
+        title: "세션이 만료되었어요!<br>다시 로그인 해주세요!",
+        confirmButtonText: "확인",
+    }).then(() => {
+        navigate("/");
+    });
+};
+
 const urlToFile = async (url, fileName) => {
     try {
         const response = await fetch(url);
-        console.log(response);
         if (!response.ok) {
             throw new Error("Network response was not ok");
         }
@@ -261,16 +152,6 @@ const urlToFile = async (url, fileName) => {
     }
 };
 
-const forceLogout = async (navigate) => {
-    localStorage.clear();
-    Swal.fire({
-        icon: "error",
-        title: "세션이 만료되었어요!<br>다시 로그인 해주세요!",
-        confirmButtonText: "확인",
-    }).then(() => {
-        navigate("/");
-    });
-};
 const makeForm = async (data, multipartName, multiparts) => {
     const form = new FormData();
     form.append(
@@ -302,6 +183,42 @@ const makeForm = async (data, multipartName, multiparts) => {
     }
     return form;
 };
+
+// 공통 에러 처리
+const handleError = (url, error) => {
+    console.error("🔴error 발생");
+    console.error("url : " + url);
+    console.error("error message : " + error);
+};
+
+// 공통 응답 처리
+const handleResponse = async ({ res, retry, retryFunc, navigate }) => {
+    const status = res.status;
+    if (status === 200 || status === 201) {
+        return res;
+    } else if (status === 401 && retry > 0) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            return retryFunc(retry - 1);
+        } else {
+            await forceLogout(navigate);
+            return res;
+        }
+    } else {
+        throw new Error("failed to process");
+    }
+};
+
+// 공통 config 생성
+const getAuthConfig = (key = "accessToken") => {
+    const token = localStorage.getItem(key);
+    return {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    };
+};
+
 const api = {
     get,
     post,
