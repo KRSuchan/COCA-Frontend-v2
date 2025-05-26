@@ -29,22 +29,17 @@ const localizer = momentLocalizer(moment);
 const getPersonalDetailSchedule = async (id, startDate, endDate, navigate) => {
     const res = await api.get(
         navigate,
-        `/api/personal-schedule/detail/date?memberId=${id}&date=${startDate}`
+        `/api/personal-schedule/detail?memberId=${id}&date=${startDate}`
     );
     if (res.data.code === 200) {
         return res.data;
     } else return null;
 };
 
-const getGroupDetailSchedule = async (
-    groupId,
-    memberId,
-    inquiryDate,
-    navigate
-) => {
+const getGroupDetailSchedule = async (groupId, memberId, date, navigate) => {
     const res = await api.get(
         navigate,
-        `/api/group-schedule/groupScheduleSpecificReq`
+        `/api/group-schedule/detail?groupId=${groupId}&memberId=${memberId}&date=${date}`
     );
     if (res.data.code === 200) {
         return res.data;

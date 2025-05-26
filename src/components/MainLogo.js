@@ -30,7 +30,7 @@ const MainLogo = () => {
                 setNotices([contents]);
             } else {
                 try {
-                    const res = api.get(
+                    const res = await api.get(
                         navigate,
                         `/api/group/notice?memberId=${localStorage.getItem(
                             "userId"

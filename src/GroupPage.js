@@ -21,47 +21,15 @@ const GroupPage = () => {
 
     // 검색어 상태
     const [searchTerm, setSearchTerm] = useState("");
-    const [initialSearchTerm, setInitialSearchTerm] = useState("");
 
     // 생성 페이지 상태
     const [createGroupPage, setCreateGroupPage] = useState(false);
 
     // 그룹 목록 상태
-    const [groups, setGroups] = useState([
-        {
-            groupId: 1,
-            name: "재생산 스타디그룹",
-            memberCount: 1009,
-            admin: "니이모를찾아서",
-            description:
-                "이 스터디그룹에서 여러분의 공부를 더욱 북돋을 동료 재수생들과 함께 할 수 있어요!",
-            hashtags: ["#IT", "#스터디"],
-        },
-        {
-            groupId: 2,
-            name: "리액트 개발자그룹",
-            memberCount: 5388,
-            admin: "관리자2",
-            description: "그룹 설명...",
-            hashtags: ["#웹개발", "#파이썬"],
-        },
-        {
-            groupId: 3,
-            name: "Vue.js 개발자그룹",
-            memberCount: 891,
-            admin: "관리자3",
-            description: "그룹 설명...",
-            hashtags: ["#Vue", "#JavaScript"],
-        },
-    ]);
+    const [groups, setGroups] = useState([]);
 
     // 해시태그 상태
-    const [hashtags, setHashtags] = useState([
-        "#IT",
-        "#스터디",
-        "#웹개발",
-        "#파이썬",
-    ]);
+    const [hashtags, setHashtags] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(null); //목록에서 선택된 그룹
 
     // 페이지네이션 상태
@@ -85,8 +53,6 @@ const GroupPage = () => {
     const fetchTagList = async () => {
         try {
             const res = await api.get(navigate, "/api/tag/all");
-            console.log(res.data);
-
             return res.data;
         } catch (error) {
             console.error(error);
@@ -106,30 +72,14 @@ const GroupPage = () => {
     };
 
     useEffect(() => {
-        const setInitialTerm = async () => {
-            const data = await fetchUserTags();
-            const randomIndex = Math.floor(Math.random() * data.length);
-            const ranSelTag = data[randomIndex].tagName;
-            // setInitialSearchTerm(ranSelTag);
-            setInitialSearchTerm(ranSelTag);
-            setSearchTerm("#" + ranSelTag);
-
-            console.log(ranSelTag);
-            console.log("t", searchTerm);
-        };
-
-        setInitialTerm();
-    }, []);
-
-    useEffect(() => {
         const searchInit = async () => {
-            const res = await searchGroupByTag(initialSearchTerm, 1);
+            const res = await searchGroupByName("", 1);
 
             setGroups(res);
         };
 
         searchInit();
-    }, [initialSearchTerm]);
+    }, []);
 
     useEffect(() => {
         fetchTagList().then((res) => {
@@ -153,7 +103,6 @@ const GroupPage = () => {
             setTotalPages(res.data.totalPages);
             return res.data.data;
         }
-        console.log(res);
     };
 
     const searchGroupByName = async (searchText, pageNum) => {
@@ -163,7 +112,6 @@ const GroupPage = () => {
                 : `/api/group/find/groupName/pageNum/${pageNum}`;
 
         const res = await api.get(navigate, url);
-        console.log(res);
 
         if (res.data.code === 200) {
             setTotalPages(res.data.totalPages);
@@ -173,14 +121,11 @@ const GroupPage = () => {
 
     const searchGroup = async (pageNum) => {
         let res;
-
-        console.log(searchTerm);
         if (searchTerm === "#") {
             res = await searchGroupByName("", pageNum);
         } else if (searchTerm.includes("#")) {
             // 태그 검색
             const match = searchTerm.match(/#([^\s]+)/)[1];
-            console.log("matchText", match);
             res = await searchGroupByTag(match, pageNum);
         } else {
             // 일반 검색
@@ -193,36 +138,12 @@ const GroupPage = () => {
     const handleSearchEnter = (event) => {
         // 22✅ 엔터 눌렀을때 [그룹 페이지]
         if (event.key === "Enter") {
-            // if (searchTerm.trim() === '') {
-            //   Swal.fire({
-            //     position: "center",
-            //     icon: "warning",
-            //     title: "경고!",
-            //     text: "검색어를 입력해주세요!",
-            //     showConfirmButton: false,
-            //     timer: 1500
-            //   });
-            //   return;
-            // }
-            console.log("검색어:", searchTerm);
             searchGroup(1);
         }
     };
 
     const handleSearchClick = () => {
         // 검색 버튼 클릭
-        // if (searchTerm.trim() === '') {
-        //   Swal.fire({
-        //     position: "center",
-        //     icon: "warning",
-        //     title: "경고!",
-        //     text: "검색어를 입력해주세요!",
-        //     showConfirmButton: false,
-        //     timer: 1500
-        //   });
-        //   return;
-        // }
-        console.log("검색 버튼 클릭:", searchTerm);
         searchGroup(1);
     };
 
@@ -238,7 +159,6 @@ const GroupPage = () => {
             setSelectedGroup(null);
         } else {
             setSelectedGroup(group);
-            console.log("그룹 선택:", group.id);
         }
     };
 
