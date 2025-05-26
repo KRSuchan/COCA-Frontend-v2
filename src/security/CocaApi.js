@@ -31,7 +31,7 @@ export const post = async (
 ) => {
     try {
         let config = getAuthConfig();
-        if (multipartName != undefined) {
+        if (multipartName !== undefined) {
             data = await makeForm(data, multipartName, multiparts);
         }
         const res = await axios.post(
@@ -62,15 +62,19 @@ export const put = async (
 ) => {
     try {
         let config = getAuthConfig();
-        if (multipartName != undefined) {
+        console.log("made config. " + config);
+        if (multipartName !== undefined) {
+            console.log(multipartName);
             data = await makeForm(data, multipartName, multiparts);
         }
+        console.log("made data " + data);
         const res = await axios.put(
             process.env.REACT_APP_SERVER_URL + url,
             data,
             config
         );
-        return handleResponse({
+        console.log("you got the response : ", res);
+        return await handleResponse({
             res,
             retry,
             retryFunc: (r) =>
@@ -161,7 +165,7 @@ const makeForm = async (data, multipartName, multiparts) => {
         })
     );
     let tempMulti = multiparts;
-    if (multiparts[0] === null && multiparts[1] === null) {
+    if (multiparts && multiparts[0] === null && multiparts[1] === null) {
         tempMulti = null;
     }
     if (tempMulti && tempMulti.length > 0) {
@@ -179,7 +183,7 @@ const makeForm = async (data, multipartName, multiparts) => {
 
         await Promise.all(multiPromises);
     } else {
-        form.append("attachments", "[]");
+        form.append(multipartName, multiparts);
     }
     return form;
 };

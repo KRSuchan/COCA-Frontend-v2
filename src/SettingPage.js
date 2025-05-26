@@ -153,7 +153,7 @@ const SettingPage = () => {
                 console.log("pw blanked");
                 data = {
                     id: userInfo.id,
-                    password: state.password,
+                    password: "",
                     userName: userInfo.userName,
                     profileImageUrl:
                         profileImageFile === null && !isEditingProfile
@@ -161,7 +161,6 @@ const SettingPage = () => {
                             : "",
                     interestId: interestData,
                 };
-                console.log("data", data);
             } else {
                 data = {
                     id: userInfo.id,
@@ -190,7 +189,6 @@ const SettingPage = () => {
                 return false;
             }
         } catch (error) {
-            console.log(error);
             Swal.fire({
                 position: "center",
                 icon: "error",
