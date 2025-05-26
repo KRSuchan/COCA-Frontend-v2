@@ -74,7 +74,6 @@ const GroupPage = () => {
     useEffect(() => {
         const searchInit = async () => {
             const res = await searchGroupByName("", 1);
-
             setGroups(res);
         };
 
