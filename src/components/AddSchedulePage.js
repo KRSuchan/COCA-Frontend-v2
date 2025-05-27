@@ -119,7 +119,7 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                 `/api/personal-schedule/delete?memberId=${userId}&personalScheduleId=${scheduleId}`
             );
         } else {
-            res = api.del(
+            res = await api.del(
                 navigate,
                 `/api/group-schedule/delete?memberId=${userId}&groupId=${selectedGroup.groupId}&scheduleId=${scheduleId}`
             );
