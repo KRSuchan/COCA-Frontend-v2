@@ -42,7 +42,8 @@
     "redux": "^5.0.1",
     "sweetalert2": "^11.11.0",
     "tui-calendar": "^1.15.3",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "zustand": "^5.0.5"
   },
   "scripts": {
     "start": "react-scripts start",

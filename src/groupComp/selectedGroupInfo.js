@@ -1,4 +1,3 @@
-// SelectedGroupInfo.js
 import { useState, useEffect } from "react";
 import { UserOutlined } from "@ant-design/icons"; // 사람 아이콘을 위한 import
 import styles from "../css/GroupPage.module.css";
@@ -6,22 +5,22 @@ import api from "../security/CocaApi";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
+// 그룹 검색 페이지
 const SelectedGroupInfo = ({ groupId }) => {
     const navigate = useNavigate();
 
     // 상태 관리를 위한 기본값 설정
     const [group, setGroup] = useState({
-        id: 11,
-        name: "수정NAME",
+        id: -1,
+        name: "",
         admin: {
-            id: "TESTID1",
-            userName: "TESTNAME1",
-            profileImgPath:
-                "https://file.instiz.net/data/file/20130117/a/6/e/a6e5e3521b4a120d81940cb69638c54b",
+            id: "",
+            userName: "",
+            profileImgPath: "",
         },
-        description: "테스트그룹 설명5",
+        description: "",
         isPrivate: false,
-        groupTags: [{ id: 1, field: "IT", name: "스프링" }],
+        groupTags: [],
         memberCount: 2,
         isAdmin: false,
         isMember: false,
@@ -36,7 +35,6 @@ const SelectedGroupInfo = ({ groupId }) => {
                 "userId"
             )}&groupId=${groupId}`
         );
-        console.log(res);
         if (res) return res.data.data;
         else return null;
     };

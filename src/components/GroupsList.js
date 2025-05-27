@@ -1,4 +1,3 @@
-// GroupsList.js
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { ListGroup } from "react-bootstrap";
@@ -7,6 +6,7 @@ import { SettingOutlined, DeleteOutlined } from "@ant-design/icons";
 import Swal from "sweetalert2";
 import api from "../security/CocaApi";
 
+// 캘린더 목록
 const GroupsList = () => {
     const groups = useSelector((state) => state.groups);
     const [selectedGroup, setSelectedGroup] = useState(
@@ -26,15 +26,18 @@ const GroupsList = () => {
     };
 
     useEffect(() => {
-        if (selectedGroup.groupId === -1) {
+        let group = JSON.parse(localStorage.getItem("selectedGroup"));
+        if (group.groupId === -1) {
             setSelectedGroup(groups[0]);
+        } else {
+            setSelectedGroup(groups[group.groupId]);
+            dispatch({ type: "SELECT_GROUP", payload: group });
         }
-
-        console.log("groups444", groups);
     }, [groups]);
 
     const handleClick = (group) => {
         setSelectedGroup(group);
+        localStorage.setItem("selectedGroup", JSON.stringify(group));
         dispatch({ type: "SELECT_GROUP", payload: group });
     };
 
@@ -66,7 +69,8 @@ const GroupsList = () => {
                             timer: 1500,
                         }).then(async (res) => {
                             dispatch({ type: "RESET_STATE", payload: null });
-                            window.location.reload();
+                            localStorage.removeItem("selectedGroup");
+                            navigate(-1);
                         });
                     } else if (res.code === 400) {
                         Swal.fire({
@@ -76,7 +80,7 @@ const GroupsList = () => {
                             showConfirmButton: false,
                             timer: 1500,
                         }).then(async (res) => {
-                            window.location.reload();
+                            navigate(-1);
                         });
                     } else {
                         Swal.fire({
@@ -98,7 +102,6 @@ const GroupsList = () => {
                     });
                 }
             });
-            // const res = quitGroup(group);
         }
     };
 

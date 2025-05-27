@@ -36,15 +36,12 @@ const MainLogo = () => {
                             "userId"
                         )}&groupId=${selectedGroup.groupId}`
                     );
-
-                    console.log(res);
                     const data = res.data.data;
                     if (data.contents === null) {
                         data.contents = "현재 공지가 없습니다.";
                     }
                     if (res.data.code === 200) {
                         setNotices([res.data.data.contents]);
-                        console.log(notices);
                     }
                 } catch (error) {
                     console.error("Failed to fetch notices:", error);
