@@ -27,7 +27,7 @@ const GroupsList = () => {
 
     useEffect(() => {
         let group = JSON.parse(localStorage.getItem("selectedGroup"));
-        if (group.groupId === -1) {
+        if (!group || group.groupId === -1) {
             setSelectedGroup(groups[0]);
         } else {
             setSelectedGroup(groups[group.groupId]);
