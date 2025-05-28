@@ -117,7 +117,7 @@ const EditGroupPage = () => {
             },
         };
 
-        const res = await api.post(navigate, `/api/group/admin`, data);
+        const res = await api.post(`/api/group/admin`, data);
 
         return res.data;
         // 403 접근 제한 에러일 경우
@@ -136,14 +136,13 @@ const EditGroupPage = () => {
     // 백엔드에서 태그 목록을 가져오는 함수
     const fetchTags = async () => {
         // TODO: 백엔드 API 호출 로직 구현
-        const res = await api.get(navigate, "/api/tag/all");
+        const res = await api.get("/api/tag/all");
         return res.data;
     };
 
     // 백엔드에서 멤버 목록을 가져오는 함수
     const fetchMembers = async () => {
         const res = await api.get(
-            navigate,
             `/api/group/list/members/member/${localStorage.getItem(
                 "userId"
             )}/group/${groupId}`
@@ -191,7 +190,7 @@ const EditGroupPage = () => {
             managersToMember: manager2member,
         };
 
-        const res = await api.put(navigate, "/api/group/update", groupData);
+        const res = await api.put("/api/group/update", groupData);
         if (res) return true;
         else return false;
     };
@@ -240,7 +239,6 @@ const EditGroupPage = () => {
 
     const deleteGroup = async () => {
         const res = await api.del(
-            navigate,
             `/api/group/delete?adminId=${localStorage.getItem(
                 "userId"
             )}&groupId=${groupId}`
@@ -265,11 +263,7 @@ const EditGroupPage = () => {
                     id: localStorage.getItem("userId"),
                     password: password,
                 };
-                const res = await api.post(
-                    navigate,
-                    "/api/member/checkPassword",
-                    data
-                );
+                const res = await api.post("/api/member/checkPassword", data);
                 if (!res) {
                     return Swal.showValidationMessage("비밀번호가 달라요!");
                 }

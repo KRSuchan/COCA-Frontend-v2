@@ -57,7 +57,7 @@ const SettingPage = () => {
     const [tagList, setTagList] = useState([]);
 
     const fetchTagList = async () => {
-        const res = await api.get(navigate, "/api/tag/all");
+        const res = await api.get("/api/tag/all");
         return res.data;
     };
 
@@ -126,14 +126,10 @@ const SettingPage = () => {
 
     // fetchUserInfo : 회원 정보 조회 api 요청
     const fetchUserInfo = async () => {
-        const res = await api.post(
-            navigate,
-            "/api/member/memberInfoInquiryReq",
-            {
-                id: state.id,
-                password: state.password,
-            }
-        );
+        const res = await api.post("/api/member/memberInfoInquiryReq", {
+            id: state.id,
+            password: state.password,
+        });
         if (res.data.code === 200) {
             return res.data.data;
         }
@@ -174,7 +170,6 @@ const SettingPage = () => {
                 };
             }
             const res = await api.put(
-                navigate,
                 "/api/member/update",
                 data,
                 "profileImage",
@@ -239,7 +234,7 @@ const SettingPage = () => {
         });
     };
     const deleteMember = async (password) => {
-        const res = await api.post(navigate, "/api/member/withdrawalReq", {
+        const res = await api.post("/api/member/withdrawalReq", {
             id: userInfo.id,
             password: password,
         });

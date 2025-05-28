@@ -28,7 +28,6 @@ const localizer = momentLocalizer(moment);
 // 일정 상세 통신
 const getPersonalDetailSchedule = async (id, startDate, endDate, navigate) => {
     const res = await api.get(
-        navigate,
         `/api/personal-schedule/detail?memberId=${id}&date=${startDate}`
     );
     if (res.data.code === 200) {
@@ -38,7 +37,6 @@ const getPersonalDetailSchedule = async (id, startDate, endDate, navigate) => {
 
 const getGroupDetailSchedule = async (groupId, memberId, date, navigate) => {
     const res = await api.get(
-        navigate,
         `/api/group-schedule/detail?groupId=${groupId}&memberId=${memberId}&date=${date}`
     );
     if (res.data.code === 200) {
@@ -62,7 +60,7 @@ const setGroups = (groups) => {
 };
 
 const getGroupList = async (id, navigate) => {
-    const res = await api.get(navigate, `/api/calendar/member/${id}`);
+    const res = await api.get(`/api/calendar/member/${id}`);
     if (res.data.code === 200) {
         return res.data.data;
     } else return [];

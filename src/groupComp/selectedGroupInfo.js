@@ -30,7 +30,6 @@ const SelectedGroupInfo = ({ groupId }) => {
 
     const fetchGroupData = async () => {
         const res = await api.get(
-            navigate,
             `/api/group/detail?memberId=${localStorage.getItem(
                 "userId"
             )}&groupId=${groupId}`
@@ -63,7 +62,7 @@ const SelectedGroupInfo = ({ groupId }) => {
                 privatePassword: pw,
             },
         };
-        const res = await api.post(navigate, "/api/group/join", data);
+        const res = await api.post("/api/group/join", data);
         if (res) return true;
         else return false;
     };
@@ -149,7 +148,6 @@ const SelectedGroupInfo = ({ groupId }) => {
 
     const inviteGroup = async (groupId, inviteId) => {
         const res = await api.post(
-            navigate,
             `/api/request/add/group-invite/from/${localStorage.getItem(
                 "userId"
             )}/to/${inviteId}/group/${groupId}`,

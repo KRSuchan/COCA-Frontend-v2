@@ -25,7 +25,6 @@ const LoginCheckPage = () => {
     const fetchProfileImage = async () => {
         try {
             const res = await api.get(
-                navigate,
                 `/api/member/memberProfileImageUrlReq?memberId=${localStorage.getItem(
                     "userId"
                 )}`
@@ -51,7 +50,7 @@ const LoginCheckPage = () => {
     }, []);
 
     const handleLogin = async () => {
-        const res = await api.post(navigate, "/api/member/checkPassword", {
+        const res = await api.post("/api/member/checkPassword", {
             id: userInfo.id,
             password: userInfo.password,
         });

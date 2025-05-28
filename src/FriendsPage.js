@@ -46,7 +46,6 @@ const FriendsPage = () => {
 
     const fetchFriendList = async () => {
         const res = await api.get(
-            navigate,
             `/api/friend/list/memberId/${localStorage.getItem("userId")}`
         );
         if (res) return res.data;
@@ -83,10 +82,7 @@ const FriendsPage = () => {
     }, []);
 
     const getFriendCalendar = async (friendid) => {
-        const res = await api.get(
-            navigate,
-            `/api/friend/schedule/friendId/${friendid}`
-        );
+        const res = await api.get(`/api/friend/schedule/friendId/${friendid}`);
         return res.data;
     };
 
@@ -130,7 +126,7 @@ const FriendsPage = () => {
     };
 
     const updateFriendProfile = async () => {
-        const res = await api.put(navigate, "/api/friend/update", {
+        const res = await api.put("/api/friend/update", {
             id: selectedFriend.friendId,
             member: {
                 id: localStorage.getItem("userId"),
@@ -154,7 +150,6 @@ const FriendsPage = () => {
 
     const addFriend = async () => {
         const res = await api.post(
-            navigate,
             `/api/request/add/friend/from/${localStorage.getItem(
                 "userId"
             )}/to/${newFriendId}`,
@@ -188,7 +183,7 @@ const FriendsPage = () => {
     };
 
     const deleteFriend = async (friendId) => {
-        const res = await api.del(navigate, `/api/friend/delete/${friendId}`);
+        const res = await api.del(`/api/friend/delete/${friendId}`);
         if (res) return true;
         else return false;
     };

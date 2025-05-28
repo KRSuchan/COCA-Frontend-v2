@@ -37,7 +37,7 @@ const NewPage = ({
     };
 
     const addToMySchedule = async (item) => {
-        const res = await api.post(navigate, "/api/group-schedule/heart", {
+        const res = await api.post("/api/group-schedule/heart", {
             groupId: item.groupId,
             scheduleId: item.scheduleId,
             memberId: localStorage.getItem("userId"),
@@ -86,15 +86,11 @@ const NewPage = ({
     };
 
     const addMyScehduleToGroup = async (date) => {
-        const res = await api.post(
-            navigate,
-            "/api/group-schedule/bringMySchedule",
-            {
-                groupId: selectedGroup.groupId,
-                memberId: localStorage.getItem("userId"),
-                date: date,
-            }
-        );
+        const res = await api.post("/api/group-schedule/bringMySchedule", {
+            groupId: selectedGroup.groupId,
+            memberId: localStorage.getItem("userId"),
+            date: date,
+        });
 
         if (res.data.code === 200) {
             if (res.data.data.length === 0) {

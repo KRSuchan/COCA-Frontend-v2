@@ -19,7 +19,7 @@ const CreateGroupPage = () => {
     const navigate = useNavigate();
 
     const fetchInterestOptions = async () => {
-        const res = await api.get(navigate, "/api/tag/all");
+        const res = await api.get("/api/tag/all");
         console.log("tag", res.data);
         return res.data;
     };
@@ -61,7 +61,7 @@ const CreateGroupPage = () => {
                 }),
         };
 
-        const res = await api.post(navigate, "/api/group/add", groupData);
+        const res = await api.post("/api/group/add", groupData);
         if (res) {
             Swal.fire({
                 position: "center",

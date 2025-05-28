@@ -52,7 +52,7 @@ const GroupPage = () => {
 
     const fetchTagList = async () => {
         try {
-            const res = await api.get(navigate, "/api/tag/all");
+            const res = await api.get("/api/tag/all");
             return res.data;
         } catch (error) {
             console.error(error);
@@ -61,7 +61,6 @@ const GroupPage = () => {
 
     const fetchUserTags = async () => {
         const res = await api.get(
-            navigate,
             `/api/member/memberTagInquiryReq?memberId=${localStorage.getItem(
                 "userId"
             )}`
@@ -97,7 +96,7 @@ const GroupPage = () => {
                 ? `/api/group/find/tag/${searchTag}/pageNum/${pageNum}`
                 : `/api/group/find/tag/pageNum/${pageNum}`;
 
-        const res = await api.get(navigate, url);
+        const res = await api.get(url);
         if (res.data.code === 200) {
             setTotalPages(res.data.totalPages);
             return res.data.data;
@@ -110,9 +109,9 @@ const GroupPage = () => {
                 ? `/api/group/find/groupName/${searchText}/pageNum/${pageNum}`
                 : `/api/group/find/groupName/pageNum/${pageNum}`;
 
-        const res = await api.get(navigate, url);
+        const res = await api.get(url);
 
-        if (res.data.code === 200) {
+        if (res && res.data.code === 200) {
             setTotalPages(res.data.totalPages);
             return res.data.data;
         } else return null;

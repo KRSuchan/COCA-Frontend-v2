@@ -38,7 +38,7 @@ function LoginPage() {
 
     const login = async () => {
         try {
-            const res = await api.post(navigate, "/api/member/loginReq", {
+            const res = await api.post("/api/member/loginReq", {
                 id: userId,
                 password: password,
             });

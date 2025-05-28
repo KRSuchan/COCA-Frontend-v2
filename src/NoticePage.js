@@ -93,7 +93,6 @@ const NoticePage = () => {
 
     const fetchScheduleRequestData = async () => {
         const res = await api.get(
-            navigate,
             `/api/request/list/schedule/member/${localStorage.getItem(
                 "userId"
             )}`
@@ -105,7 +104,6 @@ const NoticePage = () => {
 
     const fetchFriendRequestData = async () => {
         const res = await api.get(
-            navigate,
             `/api/request/list/friend/member/${localStorage.getItem("userId")}`
         );
         if (res.data.code === 200) {
@@ -115,7 +113,6 @@ const NoticePage = () => {
 
     const fetchGroupRequestData = async () => {
         const res = await api.get(
-            navigate,
             `/api/request/list/group-invite/member/${localStorage.getItem(
                 "userId"
             )}`
@@ -127,7 +124,7 @@ const NoticePage = () => {
 
     // 일정 통신
     const updateScheduleRequest = async (id, status) => {
-        const res = await api.put(navigate, "/api/request/update/schedule", {
+        const res = await api.put("/api/request/update/schedule", {
             requestId: id,
             status: status,
         });
@@ -137,10 +134,7 @@ const NoticePage = () => {
     };
 
     const deleteScheduleRequest = async (id) => {
-        const res = await api.del(
-            navigate,
-            `/api/request/delete/schedule/${id}`
-        );
+        const res = await api.del(`/api/request/delete/schedule/${id}`);
         if (res.data.code === 200) {
             return true;
         } else return false;
@@ -202,7 +196,7 @@ const NoticePage = () => {
 
     // 친구 통신
     const updateFriendRequest = async (id, status) => {
-        const res = await api.put(navigate, "/api/request/update/friend", {
+        const res = await api.put("/api/request/update/friend", {
             requestId: id,
             status: status,
         });
@@ -212,10 +206,7 @@ const NoticePage = () => {
     };
 
     const deleteFriendRequest = async (id) => {
-        const res = await api.delete(
-            navigate,
-            `/api/request/delete/friend/${id}`
-        );
+        const res = await api.delete(`/api/request/delete/friend/${id}`);
         return false;
     };
 
@@ -275,24 +266,17 @@ const NoticePage = () => {
 
     // 그룹 통신
     const updateGroupRequest = async (id, status) => {
-        const res = await api.put(
-            navigate,
-            "/api/request/update/group-invite",
-            {
-                requestId: id,
-                status: status,
-            }
-        );
+        const res = await api.put("/api/request/update/group-invite", {
+            requestId: id,
+            status: status,
+        });
         if (res.data.code === 200) {
             return true;
         } else return false;
     };
 
     const deleteGroupRequest = async (id) => {
-        const res = await api.delete(
-            navigate,
-            `/api/request/delete/group-invite/${id}`
-        );
+        const res = await api.delete(`/api/request/delete/group-invite/${id}`);
 
         if (res.data.code === 200) {
             return true;

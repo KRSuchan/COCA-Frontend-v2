@@ -17,7 +17,6 @@ const GroupsList = () => {
 
     const quitGroup = async (group) => {
         const res = await api.del(
-            navigate,
             `/api/group/leave/member/${localStorage.getItem("userId")}/group/${
                 group.groupId
             }`

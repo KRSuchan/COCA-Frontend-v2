@@ -14,7 +14,6 @@ const localizer = momentLocalizer(moment);
 const getPersonalSchedule = async (id, startDate, endDate, navigate) => {
     console.log("Get Personal Schedule");
     const res = await api.get(
-        navigate,
         `/api/personal-schedule/summary/between-dates?memberId=${id}&startDate=${startDate}&endDate=${endDate}`
     );
     if (res) return res.data.data;
@@ -30,7 +29,6 @@ const getGroupScehdule = async (
 ) => {
     console.log("Get Group Schedule");
     const res = await api.get(
-        navigate,
         `/api/group-schedule/summary?groupId=${groupId}&memberId=${memberId}&startDate=${startDate}&endDate=${endDate}`
     );
 

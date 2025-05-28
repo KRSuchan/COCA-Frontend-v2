@@ -12,7 +12,7 @@ const MainLogo = () => {
     const selectedGroup = useSelector((state) => state.selectedGroup);
 
     const handleLogOut = async () => {
-        const res = await api.post(navigate, "/api/member/logoutReq", null);
+        const res = await api.post("/api/member/logoutReq", null);
         localStorage.clear();
         navigate("/");
     };
@@ -31,7 +31,6 @@ const MainLogo = () => {
             } else {
                 try {
                     const res = await api.get(
-                        navigate,
                         `/api/group/notice?memberId=${localStorage.getItem(
                             "userId"
                         )}&groupId=${selectedGroup.groupId}`

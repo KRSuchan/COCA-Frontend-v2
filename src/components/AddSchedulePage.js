@@ -115,12 +115,10 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
         let res;
         if (selectedGroup.groupId === -1) {
             res = await api.del(
-                navigate,
                 `/api/personal-schedule/delete?memberId=${userId}&personalScheduleId=${scheduleId}`
             );
         } else {
             res = await api.del(
-                navigate,
                 `/api/group-schedule/delete?memberId=${userId}&groupId=${selectedGroup.groupId}&scheduleId=${scheduleId}`
             );
         }
@@ -193,7 +191,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
 
         if (method === "post") {
             response = await api.post(
-                navigate,
                 url,
                 requestData,
                 "attachments",
@@ -201,7 +198,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
             );
         } else {
             response = await api.put(
-                navigate,
                 url,
                 requestData,
                 "attachments",
@@ -242,7 +238,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
             // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
         };
         const response = await api.post(
-            navigate,
             url,
             requestData,
             "attachments",

@@ -35,7 +35,7 @@ function SignUpPage() {
 
     const handleDuplicateCheck = async () => {
         // 통신 구현 필요
-        const res = await api.post(navigate, "/api/member/validate-id", {
+        const res = await api.post("/api/member/validate-id", {
             id: userId,
         });
 
@@ -72,7 +72,7 @@ function SignUpPage() {
 
     const fetchTagList = async () => {
         try {
-            const res = await api.get(navigate, "/api/tag/all");
+            const res = await api.get("/api/tag/all");
             console.log(res.data);
 
             return res.data;
