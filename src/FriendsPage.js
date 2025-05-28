@@ -2,12 +2,7 @@ import { useState, useEffect } from "react";
 import { Button, Avatar, Modal, Input } from "antd"; // Modal, Input 추가
 import { useNavigate } from "react-router-dom";
 import styles from "./css/FriendsPage.module.css";
-import {
-    UserOutlined,
-    CalendarOutlined,
-    EditOutlined,
-    DeleteOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
@@ -54,27 +49,6 @@ const FriendsPage = () => {
     useEffect(() => {
         const setData = async () => {
             const res = await fetchFriendList();
-            // TODO :: 록 연동
-            const response = {
-                code: 200,
-                message: "OK",
-                data: [
-                    {
-                        friendId: 3,
-                        friendMemberId: "TESTID2",
-                        friendName: "벼랑위의표뇨",
-                        friendProfileImagePath:
-                            "https://mblogthumb-phinf.pstatic.net/MjAxODA2MDRfMjY5/MDAxNTI4MTExNjgyODQx.QtAlWz5AGylTqNbrUlY4fBjCvP0JVhMrizEFksV_e-Ag.z7yP9BuIpBoK9KmEAcRBq1TZQW7qnYQNWli71rnAESUg.PNG.hellokitty4427/1.png?type=w800",
-                    },
-                    {
-                        friendId: 4,
-                        friendMemberId: "TESTID3",
-                        friendName: "포뇨포뇨토토로",
-                        friendProfileImagePath: null,
-                    },
-                ],
-            };
-
             setFriends(res.data); //✨ res 로 변경해둘것 (2차요청사항)
         };
 
@@ -83,44 +57,14 @@ const FriendsPage = () => {
 
     const getFriendCalendar = async (friendid) => {
         const res = await api.get(`/api/friend/schedule/friendId/${friendid}`);
+        // const res = await api.get(`/api/friend/schedule?friendId=${friendid}&startDate=${}`);
+        console.log(res);
         return res.data;
     };
 
     const handleCalendarClick = async (friendid) => {
-        console.log("fri", friendid);
-
         const res = await getFriendCalendar(friendid);
-
-        const response = {
-            code: 200,
-            message: "OK",
-            data: [
-                {
-                    title: "비공개 일정",
-                    startDateTime: "2024-05-22T00:00:00",
-                    endDateTime: "2024-05-23T23:59:59",
-                    isPrivate: true,
-                },
-                {
-                    title: "임시 제목100",
-                    startDateTime: "2024-05-23T00:00:00",
-                    endDateTime: "2024-06-01T23:59:59",
-                    isPrivate: false,
-                },
-                {
-                    title: "새로운 일정",
-                    startDateTime: "2024-05-02T00:00:00",
-                    endDateTime: "2024-06-10T23:59:59",
-                    isPrivate: false,
-                },
-                {
-                    title: "또 다른 일정",
-                    startDateTime: "2024-06-15T00:00:00",
-                    endDateTime: "2024-06-20T23:59:59",
-                    isPrivate: true,
-                },
-            ],
-        };
+        setSelectedFriend(friendid);
         setEvents(res.data);
         setCalendarVisible(true);
     };
@@ -138,10 +82,6 @@ const FriendsPage = () => {
     const handleEditClick = (friend) => {
         setSelectedFriend(friend);
         setEditModalVisible(true);
-    };
-
-    const handleFriendClick = (friendId) => {
-        console.log(friendId);
     };
 
     const handleAddFriend = () => {
@@ -284,9 +224,10 @@ const FriendsPage = () => {
                 <Calendar
                     localizer={localizer}
                     events={myEvents}
+                    toolbar={false}
                     startAccessor="start"
                     endAccessor="end"
-                    style={{ height: 500 }}
+                    style={{ height: "60vh" }}
                     views={["week"]}
                     defaultView="week"
                     eventPropGetter={eventPropGetter} // 이벤트 스타일 설정 함수 적용
@@ -326,7 +267,13 @@ const FriendsPage = () => {
             </div>
             <div
                 className={styles.panelContainer}
-                style={{ display: "flex", flexDirection: "row", width: "100%" }}
+                style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    width: "100%",
+                    height: "70vh",
+                    overflow: "hidden",
+                }}
             >
                 <div
                     className={styles.leftPanel}
@@ -351,9 +298,13 @@ const FriendsPage = () => {
                                 border: "1px solid lightgray",
                                 borderRadius: "10px",
                                 padding: "15px",
-                                backgroundColor: "aliceblue",
+                                backgroundColor:
+                                    selectedFriend === friend.friendId
+                                        ? "deepskyblue"
+                                        : "aliceblue",
+                                cursor: "pointer",
                             }}
-                            onClick={() => handleFriendClick(friend.friendId)}
+                            onClick={() => handleCalendarClick(friend.friendId)}
                         >
                             <div
                                 style={{
@@ -386,20 +337,6 @@ const FriendsPage = () => {
                                 </span>
                             </div>
                             <div className={styles.icons}>
-                                <Button
-                                    type="primary"
-                                    size="medium"
-                                    style={{
-                                        marginRight: 12,
-                                        backgroundColor: "skyblue",
-                                        color: "white",
-                                    }}
-                                    onClick={() =>
-                                        handleCalendarClick(friend.friendId)
-                                    }
-                                >
-                                    <CalendarOutlined />
-                                </Button>
                                 <Button
                                     type="danger"
                                     size="medium"
@@ -440,7 +377,7 @@ const FriendsPage = () => {
                     }}
                 >
                     {/* 우측패널 - 추가 기능 */}
-                    <CalendarPanel events={events} />
+                    {selectedFriend && <CalendarPanel events={events} />}
                 </div>
             </div>
             {editModalVisible && (
