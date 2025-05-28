@@ -1,5 +1,4 @@
 import axios from "axios";
-import Swal from "sweetalert2";
 
 // GET
 export const get = async (url, retry = 1) => {
@@ -127,13 +126,7 @@ const refreshAccessToken = async () => {
 const forceLogout = async () => {
     console.log("force logout");
     localStorage.clear();
-    Swal.fire({
-        icon: "error",
-        title: "세션이 만료되었어요!<br>다시 로그인 해주세요!",
-        confirmButtonText: "확인",
-    }).then(() => {
-        window.location.href = "/";
-    });
+    window.location.href = "/";
 };
 
 const urlToFile = async (url, fileName) => {
