@@ -56,7 +56,7 @@ const FriendsPage = () => {
     }, []);
 
     const getFriendCalendar = async (friendid) => {
-        const res = await api.get(`/api/friend/schedule/friendId/${friendid}`);
+        const res = await api.get(`/api/friend/schedule?friendId=${friendid}`);
         // const res = await api.get(`/api/friend/schedule?friendId=${friendid}&startDate=${}`);
         console.log(res);
         return res.data;
