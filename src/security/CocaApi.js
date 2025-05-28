@@ -56,7 +56,6 @@ export const put = async (url, data, multipartName, multiparts, retry = 1) => {
     try {
         let config = getAuthConfig();
         if (multipartName !== undefined) {
-            console.log(multipartName);
             data = await makeForm(data, multipartName, multiparts);
         }
         const res = await axios.put(
@@ -178,10 +177,6 @@ const makeForm = async (data, multipartName, multiparts) => {
 // 공통 에러 처리
 const handleError = async ({ url, error, retry, retryFunc }) => {
     const status = error?.response?.status;
-    console.log("handleError");
-    console.log(error.response);
-    console.log("status : ", status);
-
     if (status === 401 && retry > 0) {
         const refreshed = await refreshAccessToken();
         if (refreshed && retry > 0) {
@@ -201,7 +196,6 @@ const handleError = async ({ url, error, retry, retryFunc }) => {
 // 공통 응답 처리
 const handleResponse = async ({ res }) => {
     const status = res.status;
-    console.log("handleResponse");
     if (status === 200 || status === 201) {
         return res;
     } else {

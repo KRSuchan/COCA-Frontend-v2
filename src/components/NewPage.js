@@ -49,7 +49,6 @@ const NewPage = ({
     const handleHeartClick = (item) => {
         //✌️ 하트 클릭했을��, 개인일정으로 저장
         // 하트 클릭 핸들러 함수
-        console.log(`${item.title}의 하트를 클릭했습니다.`);
         Swal.fire({
             icon: "question",
             title: "일정 추가",
@@ -113,12 +112,7 @@ const NewPage = ({
         }).then(async (result) => {
             if (result.isConfirmed) {
                 // 확인 버튼을 눌렀을 때 실행할 핸들러
-                console.log(
-                    `${selectedDate} 일자에 포함된 내 일정을 가져옵니다.`
-                );
-
                 const res = await addMyScehduleToGroup(selectedDate);
-                console.log(res);
                 if (res === "no") {
                     Swal.fire({
                         position: "center",
