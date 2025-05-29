@@ -18,15 +18,15 @@ function LoginPage() {
         console.log("=========== 현재 프론트 버전 ===========");
         console.log(process.env.REACT_APP_VERSION);
     }, []);
+
     useEffect(() => {
         const id = localStorage.getItem("userId");
-
         if (id) {
             navigate("/main");
         } else {
             dispatch({ type: "RESET_STATE", payload: null });
         }
-    }, []);
+    }, [navigate, dispatch]);
 
     const handleLogin = () => {
         login();
@@ -42,6 +42,16 @@ function LoginPage() {
                 id: userId,
                 password: password,
             });
+            if (!res) {
+                Swal.fire({
+                    position: "center",
+                    icon: "error",
+                    title: "서버 미응답",
+                    text: "서버에서 응답을 하지 않아요",
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
+            }
             if (res.data.code === 200) {
                 console.log("로그인 성공");
                 localStorage.setItem("userId", userId);

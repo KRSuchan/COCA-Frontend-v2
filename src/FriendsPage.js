@@ -14,25 +14,15 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import api from "./security/CocaApi";
 import Swal from "sweetalert2";
 import { ko } from "date-fns/locale"; // 한글 로케일 추가
-import { showLoginRequired } from "./security/ErrorController";
 
 const FriendsPage = () => {
     const navigate = useNavigate();
     const handleBack = () => {
-        // navigate(-1);
         navigate("/main");
     };
 
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
-
     const [friends, setFriends] = useState([]);
     const [events, setEvents] = useState([]);
-    const [calendarVisible, setCalendarVisible] = useState(false);
     const [editModalVisible, setEditModalVisible] = useState(false); // 수정 모달창 visible 상태 추가
     const [addModalVisible, setAddModalVisible] = useState(false); // 추가 모달창 visible 상태 추가
     const [selectedFriend, setSelectedFriend] = useState(null); // 선택된 친구 상태 추가
@@ -51,13 +41,11 @@ const FriendsPage = () => {
             const res = await fetchFriendList();
             setFriends(res.data); //✨ res 로 변경해둘것 (2차요청사항)
         };
-
         setData();
     }, []);
 
     const getFriendCalendar = async (friendid) => {
         const res = await api.get(`/api/friend/schedule?friendId=${friendid}`);
-        // const res = await api.get(`/api/friend/schedule?friendId=${friendid}&startDate=${}`);
         console.log(res);
         return res.data;
     };
@@ -66,11 +54,10 @@ const FriendsPage = () => {
         const res = await getFriendCalendar(friendid);
         setSelectedFriend(friendid);
         setEvents(res.data);
-        setCalendarVisible(true);
     };
 
     const updateFriendProfile = async () => {
-        const res = await api.put("/api/friend/update", {
+        await api.put("/api/friend/update", {
             id: selectedFriend.friendId,
             member: {
                 id: localStorage.getItem("userId"),
@@ -383,7 +370,7 @@ const FriendsPage = () => {
             {editModalVisible && (
                 <Modal
                     title="친구 닉네임 수정"
-                    visible={editModalVisible}
+                    open={editModalVisible}
                     onOk={updateFriendProfile}
                     onCancel={() => setEditModalVisible(false)}
                 >

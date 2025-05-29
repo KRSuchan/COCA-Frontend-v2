@@ -4,17 +4,9 @@ import styles from "./css/SettingPage.module.css"; // 스타일 시트 임포트
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "./security/CocaApi";
-import { showLoginRequired } from "./security/ErrorController";
 
 const LoginCheckPage = () => {
     const navigate = useNavigate();
-
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
 
     const [userInfo, setUserInfo] = useState({
         id: localStorage.getItem("userId"),
@@ -22,27 +14,20 @@ const LoginCheckPage = () => {
         profileImgPath: "",
     });
 
-    const fetchProfileImage = async () => {
-        try {
+    useEffect(() => {
+        const setProfileImage = async () => {
             const res = await api.get(
                 `/api/member/memberProfileImageUrlReq?memberId=${localStorage.getItem(
                     "userId"
                 )}`
             );
-            if (res.data.code === 200) {
-                return res.data.data;
-            } else return null;
-        } catch (error) {
-            return null;
-        }
-    };
-
-    useEffect(() => {
-        const setProfileImage = async () => {
-            const res = await fetchProfileImage();
 
             if (res) {
-                setUserInfo({ ...userInfo, profileImgPath: res });
+                setUserInfo({
+                    id: localStorage.getItem("userId"),
+                    password: "",
+                    profileImgPath: res.data.data,
+                });
             }
         };
 

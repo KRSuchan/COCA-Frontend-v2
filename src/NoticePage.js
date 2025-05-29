@@ -4,18 +4,10 @@ import { UserOutlined } from "@ant-design/icons";
 import { Tabs, Card, Avatar, Button } from "antd";
 import styles from "./css/NoticePage.module.css";
 import Swal from "sweetalert2";
-import { showLoginRequired } from "./security/ErrorController";
 import api from "./security/CocaApi";
 const { TabPane } = Tabs;
 
 const NoticePage = () => {
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
-
     const navigate = useNavigate();
     const [tab, setTab] = useState("일정");
     const [schedules, setSchedules] = useState([
@@ -206,7 +198,7 @@ const NoticePage = () => {
     };
 
     const deleteFriendRequest = async (id) => {
-        const res = await api.delete(`/api/request/delete/friend/${id}`);
+        await api.delete(`/api/request/delete/friend/${id}`);
         return false;
     };
 
@@ -335,10 +327,6 @@ const NoticePage = () => {
                 window.location.reload();
             });
         }
-    };
-
-    const handleDeleteAll = () => {
-        console.log(`현재 탭: ${tab}`);
     };
 
     const TabContent = () => (

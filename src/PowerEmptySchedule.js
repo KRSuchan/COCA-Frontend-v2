@@ -18,12 +18,10 @@ import koLocale from "@fullcalendar/core/locales/ko"; // 한국어 로케일 추
 import { UserOutlined } from "@ant-design/icons"; // antd 아이콘 추가
 import Swal from "sweetalert2"; // Swal 추가
 import { useSelector } from "react-redux";
-import { showLoginRequired } from "./security/ErrorController";
 import api from "./security/CocaApi";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
-const { TabPane } = Tabs;
 
 // 🍀🍀🍀 코드 작동 방식
 // 🍀 range 로 검색범위 설정하고 >  number 로 찾을 기간 N > unit 으로 일/시간/분 선택
@@ -33,12 +31,6 @@ const { TabPane } = Tabs;
 // 🍀 handleEventClick 일정 클릭시 일정 추가 모달창 띄우고 제목, 내용, 시작시간, 종료시간 입력 가능하고 저장하면 일정 추가됨
 
 const PowerEmptySchedule = () => {
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
     const navigate = useNavigate();
     const calendarRef = useRef(null);
     const [isModalVisible, setIsModalVisible] = useState(false); // 모달 상태
@@ -50,9 +42,9 @@ const PowerEmptySchedule = () => {
     const [range, setRange] = useState(null); //시작일 끝일
     const [members, setMembers] = useState([
         {
-            id: localStorage.getItem("userId"),
-            name: localStorage.getItem("userId"),
-            photo: "https://cocaattachments.s3.amazonaws.com/DEFAULT_PROFILE_IMG.jpg",
+            id: "id",
+            name: "me",
+            photo: "url",
         },
     ]); // 기존 멤버 상태
 
@@ -67,15 +59,7 @@ const PowerEmptySchedule = () => {
     const [groupMembers, setGroupMembers] = useState([]); // 선택된 그룹의 멤버 목록
     const [selectedGroup, setSelectedGroup] = useState(null); // 선택된 그룹
 
-    const fetchFriendList = async () => {
-        const res = await api.get(
-            `/api/friend/list/memberId/${localStorage.getItem("userId")}`
-        );
-        if (res.data.code === 200) {
-            return res.data.data; // 수정된 부분
-        }
-    };
-
+    // 처음 마운트 useEffect
     useEffect(() => {
         // 친구 목록을 받아오는 함수
         const fetchFriends = async () => {
@@ -86,9 +70,32 @@ const PowerEmptySchedule = () => {
             }));
             setFriends(data); // 수정된 부분
         };
+        const fetchMyProfile = async () => {
+            let res = await api.get(
+                `/api/member/memberProfileImageUrlReq?memberId=${localStorage.getItem(
+                    "userId"
+                )}`
+            );
 
+            let data = {
+                id: localStorage.getItem("userId"),
+                name: "나",
+                photo: res.data.data,
+            };
+            setMembers([data]);
+        };
+        fetchMyProfile();
         fetchFriends();
     }, []);
+
+    const fetchFriendList = async () => {
+        const res = await api.get(
+            `/api/friend/list/memberId/${localStorage.getItem("userId")}`
+        );
+        if (res.data.code === 200) {
+            return res.data.data; // 수정된 부분
+        }
+    };
 
     const fetchGroupMembers = async (group) => {
         const res = await api.get(
@@ -108,13 +115,6 @@ const PowerEmptySchedule = () => {
             if (selectedGroup) {
                 console.log(selectedGroup);
                 const data = await fetchGroupMembers(selectedGroup);
-                const membersData = [
-                    {
-                        id: "TESTID1",
-                        userName: "TESTNAME1",
-                        profileImgPath: "TESTURL1",
-                    },
-                ];
                 // setGroupMembers(membersData);
                 setGroupMembers(data);
             }
@@ -252,54 +252,6 @@ const PowerEmptySchedule = () => {
 
     const handleSearch = async () => {
         //✌️찾기버튼 눌렀을떄! unit에서 일인지 시간인지 분인지 확인해야 함.
-        // console.log(formatDate(range));
-
-        // 일정 데이터를 받아옴. -> 각자 개인 일정?
-        const fetchSchedules = async () => {
-            const data = [
-                [
-                    { startTime: "2024-05-01", endTime: "2024-07-02" },
-                    { startTime: "2024-07-10", endTime: "2024-08-02" },
-                    { startTime: "2024-09-21", endTime: "2024-12-31" },
-                    { startTime: "2025-01-01", endTime: "2025-03-31" },
-                    { startTime: "2025-04-01", endTime: "2025-06-30" },
-                ],
-                [
-                    { startTime: "2024-06-01", endTime: "2024-08-01" },
-                    { startTime: "2024-08-10", endTime: "2024-10-20" },
-                    { startTime: "2024-10-21", endTime: "2025-01-31" },
-                    { startTime: "2025-02-01", endTime: "2025-04-30" },
-                    { startTime: "2025-05-01", endTime: "2025-07-30" },
-                ],
-                [
-                    { startTime: "2024-06-01", endTime: "2024-08-01" },
-                    { startTime: "2024-08-11", endTime: "2024-10-20" },
-                    { startTime: "2024-10-21", endTime: "2025-01-31" },
-                    { startTime: "2025-02-01", endTime: "2025-04-30" },
-                    { startTime: "2025-05-01", endTime: "2025-07-30" },
-                ],
-            ];
-            setSchedules(data);
-        };
-
-        // 빈일정 데이터를 받아오는 함수 -> 빈 일정
-        const fetchEmptySchedules = async () => {
-            const emptyData = [
-                { startTime: "2024-08-02", endTime: "2024-08-06" },
-                { startTime: "2024-08-03", endTime: "2024-08-07" },
-                { startTime: "2024-08-04", endTime: "2024-08-08" },
-                { startTime: "2024-08-05", endTime: "2024-08-09" },
-                { startTime: "2024-08-06", endTime: "2024-08-10" },
-            ];
-
-            const data = await getEmptySchedules();
-            setEmptySchedules(data);
-
-            console.log(emptySchedules);
-        };
-
-        // await fetchSchedules();
-
         const emptyScheduleData = await getEmptySchedules();
         setEmptySchedules(emptyScheduleData);
 
@@ -317,9 +269,6 @@ const PowerEmptySchedule = () => {
             const calendarApi = calendarRef.current.getApi();
             const startDate = range[0].toDate();
             const endDate = range[1].toDate();
-            const duration =
-                moment(endDate).diff(moment(startDate), "months") + 1; // 월 단위로 계산
-
             calendarApi.gotoDate(startDate); // 선택된 범위의 시작 날짜로 이동
 
             // FullCalendar의 view를 업데이트
@@ -375,7 +324,6 @@ const PowerEmptySchedule = () => {
 
     const handleModalOk = () => {
         // 모달창에서 친구 선택하고 추가 버튼 누르면 멤버 상태에 추가됨
-        console.log(selectedFriend);
         if (selectedFriend) {
             const newMember = {
                 id: selectedFriend.friendId,
@@ -407,13 +355,9 @@ const PowerEmptySchedule = () => {
         endTime,
         color
     ) => {
-        console.log(members);
-
         const memberData = members
             .filter((item) => item.id !== localStorage.getItem("userId"))
             .map((item) => ({ id: item.id }));
-
-        console.log(memberData);
 
         const data = {
             sender: {
@@ -429,8 +373,6 @@ const PowerEmptySchedule = () => {
             },
             receivers: memberData,
         };
-
-        console.log("da", data);
 
         const res = await api.post("/api/request/add/schedule", data);
 
@@ -553,8 +495,6 @@ const PowerEmptySchedule = () => {
                 color: "#4A90E2", // 새로 일정 색상 설정 (파란)
             }))
         );
-
-        console.log("em", emptySchedules);
 
         // 빈 일정 벤트 추가
         const emptyEvents = emptySchedules
@@ -695,6 +635,117 @@ const PowerEmptySchedule = () => {
         );
     };
 
+    const tabItems = [
+        {
+            key: "1",
+            label: "친구선택",
+            children: (
+                <List
+                    itemLayout="horizontal"
+                    dataSource={friends}
+                    renderItem={(friend) => (
+                        <List.Item
+                            onClick={() => setSelectedFriend(friend)}
+                            style={{
+                                cursor: "pointer",
+                                backgroundColor:
+                                    selectedFriend?.friendId === friend.friendId
+                                        ? "#e6f7ff"
+                                        : "transparent",
+                            }}
+                        >
+                            <List.Item.Meta
+                                avatar={
+                                    <Avatar
+                                        src={friend.friendProfileImagePath}
+                                        icon={
+                                            !friend.friendProfileImagePath && (
+                                                <UserOutlined />
+                                            )
+                                        }
+                                    />
+                                }
+                                title={friend.friendName}
+                            />
+                        </List.Item>
+                    )}
+                />
+            ),
+        },
+        {
+            key: "2",
+            label: "그룹멤버",
+            children: (
+                <div style={{ display: "flex" }}>
+                    <div style={{ flex: 1, marginRight: "10px" }}>
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={groups}
+                            renderItem={(group) =>
+                                group.groupId !== -1 && (
+                                    <List.Item
+                                        onClick={() => setSelectedGroup(group)}
+                                        style={{
+                                            cursor: "pointer",
+                                            backgroundColor:
+                                                selectedGroup?.groupId ===
+                                                group.groupId
+                                                    ? "#e6f7ff"
+                                                    : "transparent",
+                                        }}
+                                    >
+                                        <List.Item.Meta
+                                            title={group.groupName}
+                                        />
+                                    </List.Item>
+                                )
+                            }
+                        />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={groupMembers}
+                            renderItem={(member) => (
+                                <List.Item
+                                    onClick={() =>
+                                        setSelectedFriend({
+                                            friendId: member.id,
+                                            friendName: member.userName,
+                                            friendProfileImagePath:
+                                                member.profileImgPath,
+                                        })
+                                    }
+                                    style={{
+                                        cursor: "pointer",
+                                        backgroundColor:
+                                            selectedFriend?.friendId ===
+                                            member.id
+                                                ? "#e6f7ff"
+                                                : "transparent",
+                                    }}
+                                >
+                                    <List.Item.Meta
+                                        avatar={
+                                            <Avatar
+                                                src={member.profileImgPath}
+                                                icon={
+                                                    !member.profileImgPath && (
+                                                        <UserOutlined />
+                                                    )
+                                                }
+                                            />
+                                        }
+                                        title={member.userName}
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                    </div>
+                </div>
+            ),
+        },
+    ];
     return (
         <div
             className={styles.container}
@@ -874,121 +925,12 @@ const PowerEmptySchedule = () => {
             </div>
             <Modal
                 title="멤버 추가"
-                visible={isModalVisible}
+                open={isModalVisible}
                 onOk={handleModalOk}
                 onCancel={handleModalCancel}
-                destroyOnClose
+                destroyOnHidden
             >
-                <Tabs defaultActiveKey="1">
-                    <TabPane tab="친구선택" key="1">
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={friends}
-                            renderItem={(friend) => (
-                                <List.Item
-                                    onClick={() => setSelectedFriend(friend)}
-                                    style={{
-                                        cursor: "pointer",
-                                        backgroundColor:
-                                            selectedFriend?.friendId ===
-                                            friend.friendId
-                                                ? "#e6f7ff"
-                                                : "transparent",
-                                    }}
-                                >
-                                    <List.Item.Meta
-                                        avatar={
-                                            <Avatar
-                                                src={
-                                                    friend.friendProfileImagePath
-                                                }
-                                                icon={
-                                                    !friend.friendProfileImagePath && (
-                                                        <UserOutlined />
-                                                    )
-                                                }
-                                            />
-                                        }
-                                        title={friend.friendName}
-                                    />
-                                </List.Item>
-                            )}
-                        />
-                    </TabPane>
-                    <TabPane tab="그룹멤버" key="2">
-                        <div style={{ display: "flex" }}>
-                            <div style={{ flex: 1, marginRight: "10px" }}>
-                                <List
-                                    itemLayout="horizontal"
-                                    dataSource={groups}
-                                    renderItem={(group) =>
-                                        group.groupId !== -1 && (
-                                            <List.Item
-                                                onClick={() =>
-                                                    setSelectedGroup(group)
-                                                }
-                                                style={{
-                                                    cursor: "pointer",
-                                                    backgroundColor:
-                                                        selectedGroup?.groupId ===
-                                                        group.groupId
-                                                            ? "#e6f7ff"
-                                                            : "transparent",
-                                                }}
-                                            >
-                                                <List.Item.Meta
-                                                    title={group.groupName}
-                                                />
-                                            </List.Item>
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <List
-                                    itemLayout="horizontal"
-                                    dataSource={groupMembers}
-                                    renderItem={(member) => (
-                                        <List.Item
-                                            onClick={() =>
-                                                setSelectedFriend({
-                                                    friendId: member.id,
-                                                    friendName: member.userName,
-                                                    friendProfileImagePath:
-                                                        member.profileImgPath,
-                                                })
-                                            }
-                                            style={{
-                                                cursor: "pointer",
-                                                backgroundColor:
-                                                    selectedFriend?.friendId ===
-                                                    member.id
-                                                        ? "#e6f7ff"
-                                                        : "transparent",
-                                            }}
-                                        >
-                                            <List.Item.Meta
-                                                avatar={
-                                                    <Avatar
-                                                        src={
-                                                            member.profileImgPath
-                                                        }
-                                                        icon={
-                                                            !member.profileImgPath && (
-                                                                <UserOutlined />
-                                                            )
-                                                        }
-                                                    />
-                                                }
-                                                title={member.userName}
-                                            />
-                                        </List.Item>
-                                    )}
-                                />
-                            </div>
-                        </div>
-                    </TabPane>
-                </Tabs>
+                <Tabs defaultActiveKey="1" items={tabItems} />
             </Modal>
         </div>
     );

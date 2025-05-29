@@ -1,6 +1,5 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
@@ -18,12 +17,8 @@ import AddSchedulePage from "./components/AddSchedulePage";
 import MainLogo from "./components/MainLogo";
 import { useNavigate } from "react-router-dom";
 import api from "./security/CocaApi";
-import { showLoginRequired } from "./security/ErrorController";
 
 moment.locale("ko");
-
-// Create the localizer
-const localizer = momentLocalizer(moment);
 
 // 일정 상세 통신
 const getPersonalDetailSchedule = async (id, startDate, endDate, navigate) => {
@@ -44,14 +39,6 @@ const getGroupDetailSchedule = async (groupId, memberId, date, navigate) => {
     } else return null;
 };
 
-// Define your updateDate action creator
-const updateDate = (newDate) => {
-    return {
-        type: "UPDATE_DATE",
-        payload: newDate,
-    };
-};
-
 const setGroups = (groups) => {
     return {
         type: "SET_GROUPS",
@@ -59,7 +46,7 @@ const setGroups = (groups) => {
     };
 };
 
-const getGroupList = async (id, navigate) => {
+const getGroupList = async (id) => {
     const res = await api.get(`/api/calendar/member/${id}`);
     if (res.data.code === 200) {
         return res.data.data;
@@ -69,13 +56,6 @@ const getGroupList = async (id, navigate) => {
 function MainPage() {
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
-
     // 'default'와 'newPanel' 중 하나를 값으로 가질 수 있는 activePanel 상태 추가
     // 'default': 기본 left-panel을 보여줌, 'newPanel': 새로운 페이지를 left-panel에 보여줌
     const [editingSchedule, setEditingSchedule] = useState(null); // 편집 중인 일정 상태
@@ -84,13 +64,12 @@ function MainPage() {
     const [schedule, setSchedule] = useState();
 
     const dispatch = useDispatch();
-    const groups = useSelector((state) => state.groups);
 
     useEffect(() => {
         const fetchGroups = async () => {
             const userId = localStorage.getItem("userId");
             if (userId) {
-                const res = await getGroupList(userId, navigate);
+                const res = await getGroupList(userId);
                 dispatch(setGroups(res));
             }
         };
@@ -134,7 +113,7 @@ function MainPage() {
 
             console.log("res3", res);
 
-            if (res && res.code == 200) {
+            if (res && res.code === 200) {
                 setSchedule(res.data);
             } else {
                 console.error("상세 일정 불러오기 실패", res);

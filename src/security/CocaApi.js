@@ -17,7 +17,7 @@ export const get = async (url, retry = 1) => {
         console.error("Error object:", error);
         console.error("Error response:", error.response);
 
-        await handleError({
+        return await handleError({
             url,
             error,
             retry,
@@ -42,7 +42,7 @@ export const post = async (url, data, multipartName, multiparts, retry = 1) => {
             res,
         });
     } catch (error) {
-        await handleError({
+        return await handleError({
             url,
             error,
             retry,
@@ -67,7 +67,7 @@ export const put = async (url, data, multipartName, multiparts, retry = 1) => {
             res,
         });
     } catch (error) {
-        await handleError({
+        return await handleError({
             url,
             error,
             retry,
@@ -88,7 +88,7 @@ export const del = async (url, retry = 1) => {
             res,
         });
     } catch (error) {
-        await handleError({
+        return await handleError({
             url,
             error,
             retry,

@@ -3,41 +3,16 @@ import { UserOutlined, EditOutlined } from "@ant-design/icons"; // 아이콘 추
 import styles from "./css/SettingPage.module.css"; // 스타일 시트 임포트
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
-import { showLoginRequired } from "./security/ErrorController";
 import api from "./security/CocaApi";
 
 const SettingPage = () => {
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
-
     let { state } = useLocation();
     const [userInfo, setUserInfo] = useState({
-        id: "defaultUser",
-        password: "defaultPassword",
-        id: state?.id || "defaultUser",
-        password: state?.password || "defaultPassword",
-        userName: "defaultUserName",
-        profileImgPath:
-            state?.profileImgPath ||
-            "https://health.chosun.com/site/data/img_dir/2023/01/10/2023011001501_0.jpg",
-        interest: [
-            {
-                tagId: 1,
-                tagName: "코카",
-            },
-            {
-                tagId: 2,
-                tagName: "콜라",
-            },
-            {
-                tagId: 3,
-                tagName: "코카콜라",
-            },
-        ],
+        id: state?.id,
+        password: state?.password,
+        userName: "",
+        profileImgPath: state?.profileImgPath,
+        interest: [],
     });
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileImage, setProfileImage] = useState(null);
@@ -124,16 +99,6 @@ const SettingPage = () => {
         }));
     };
 
-    // fetchUserInfo : 회원 정보 조회 api 요청
-    const fetchUserInfo = async () => {
-        const res = await api.post("/api/member/memberInfoInquiryReq", {
-            id: state.id,
-            password: state.password,
-        });
-        if (res.data.code === 200) {
-            return res.data.data;
-        }
-    };
     // updateMember : 회원 정보 수정 api 요청
     const updateMember = async () => {
         try {
@@ -291,17 +256,20 @@ const SettingPage = () => {
     // 비밀번호 변경 후 오류 발생 -> res = undefined -> res.id cannot read
     useEffect(() => {
         const fetchData = async () => {
-            if (state === null) return;
-            const res = await fetchUserInfo();
-            console.log("res", res);
-            setUserInfo({
-                id: res.id,
-                password: "",
-                userName: res.userName,
-                profileImgPath: res.profileImgPath,
-                interest: res.interest.map((item) => item.tagName),
+            const res = await api.post("/api/member/memberInfoInquiryReq", {
+                id: state.id,
+                password: state.password,
             });
-            setInterests(res.interest.map((item) => item.tagName));
+            if (res) {
+                setUserInfo({
+                    id: res.id,
+                    password: "",
+                    userName: res.userName,
+                    profileImgPath: res.profileImgPath,
+                    interest: res.interest.map((item) => item.tagName),
+                });
+                setInterests(res.interest.map((item) => item.tagName));
+            }
         };
         fetchData();
     }, []);

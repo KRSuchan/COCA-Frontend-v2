@@ -6,13 +6,12 @@ import api from "../security/CocaApi";
 import { useSelector } from "react-redux";
 
 const MainLogo = () => {
-    const [showNotification, setShowNotification] = useState(true);
     const [notices, setNotices] = useState([]);
     const navigate = useNavigate();
     const selectedGroup = useSelector((state) => state.selectedGroup);
 
     const handleLogOut = async () => {
-        const res = await api.post("/api/member/logoutReq", null);
+        await api.post("/api/member/logoutReq", null);
         localStorage.clear();
         navigate("/");
     };
@@ -74,18 +73,16 @@ const MainLogo = () => {
             className="logo-container"
             style={{ display: "flex", alignItems: "center" }}
         >
-            {showNotification && (
-                <div
-                    style={{
-                        marginLeft: "20px",
-                        marginRight: "10px",
-                        cursor: "pointer",
-                    }}
-                    onClick={handleNotificationClick}
-                >
-                    <BellOutlined style={{ color: "gray", fontSize: "24px" }} />
-                </div>
-            )}
+            <div
+                style={{
+                    marginLeft: "20px",
+                    marginRight: "10px",
+                    cursor: "pointer",
+                }}
+                onClick={handleNotificationClick}
+            >
+                <BellOutlined style={{ color: "gray", fontSize: "24px" }} />
+            </div>
             <div
                 style={{
                     marginLeft: "10px",

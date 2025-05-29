@@ -7,17 +7,9 @@ import CreateGroupPage from "./groupComp/CreateGroupPage";
 
 import api from "./security/CocaApi";
 import Pagination from "@mui/material/Pagination"; // MUI Pagination 추가
-import { showLoginRequired } from "./security/ErrorController";
 
 const GroupPage = () => {
     const navigate = useNavigate();
-
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
 
     // 검색어 상태
     const [searchTerm, setSearchTerm] = useState("");
@@ -36,9 +28,6 @@ const GroupPage = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // 유저 해시태그 상태
-    const [userTags, setUserTags] = useState(["", "", ""]);
-
     const handleBackClick = () => {
         // 뒤로가기 버튼
         navigate("/main");
@@ -56,17 +45,6 @@ const GroupPage = () => {
             return res.data;
         } catch (error) {
             console.error(error);
-        }
-    };
-
-    const fetchUserTags = async () => {
-        const res = await api.get(
-            `/api/member/memberTagInquiryReq?memberId=${localStorage.getItem(
-                "userId"
-            )}`
-        );
-        if (res.data.code === 200) {
-            return res.data.data;
         }
     };
 
@@ -89,7 +67,6 @@ const GroupPage = () => {
         });
     }, []);
 
-    // TODO :: 페이지 검색 처리
     const searchGroupByTag = async (searchTag, pageNum) => {
         const url =
             searchTag !== ""

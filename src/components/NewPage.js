@@ -1,7 +1,6 @@
 import React from "react";
 import Swal from "sweetalert2";
 import api from "../security/CocaApi";
-import { useNavigate } from "react-router-dom";
 
 const NewPage = ({
     setActivePanel,
@@ -11,8 +10,6 @@ const NewPage = ({
     editingSchedule,
     selectedGroup,
 }) => {
-    const navigate = useNavigate();
-
     const dateToString = () => {
         const year = selectedDate.split("-")[0];
         const month = selectedDate.split("-")[1];

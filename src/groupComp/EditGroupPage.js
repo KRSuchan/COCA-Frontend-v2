@@ -28,8 +28,6 @@ const EditGroupPage = () => {
     const [members, setMembers] = useState([]);
     const [privatePassword, setPrivatePassword] = useState("");
     const [originalManager, setOriginalManager] = useState([]);
-    const [membersToManager, setMembersToManager] = useState([]);
-    const [managersToMember, setManagerToMember] = useState([]);
     const dispatch = useDispatch();
 
     useEffect(() => {
