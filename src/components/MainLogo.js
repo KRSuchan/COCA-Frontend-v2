@@ -1,6 +1,6 @@
 // import React, { useState } from 'react';
 import { useState, useEffect } from "react";
-import { LogoutOutlined, BellOutlined } from "@ant-design/icons";
+import { BellOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import api from "../security/CocaApi";
 import { useSelector } from "react-redux";
@@ -83,16 +83,18 @@ const MainLogo = () => {
             >
                 <BellOutlined style={{ color: "gray", fontSize: "24px" }} />
             </div>
-            <div
+            <button
                 style={{
-                    marginLeft: "10px",
+                    width: "20%",
+                    margin: "1%",
                     cursor: "pointer",
-                    marginRight: "20px",
+                    background: "white",
                 }}
                 onClick={handleLogOut}
             >
-                <LogoutOutlined style={{ color: "gray", fontSize: "24px" }} />
-            </div>
+                로그아웃
+                {/* <LogoutOutlined style={{ color: "gray", fontSize: "24px" }} /> */}
+            </button>
             <div
                 className="marquee-container"
                 style={{
