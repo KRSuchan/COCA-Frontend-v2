@@ -32,7 +32,7 @@ const GroupsList = () => {
             setSelectedGroup(groups[group.groupId]);
             dispatch({ type: "SELECT_GROUP", payload: group });
         }
-    }, [groups]);
+    }, [groups, dispatch]);
 
     const handleClick = (group) => {
         setSelectedGroup(group);
