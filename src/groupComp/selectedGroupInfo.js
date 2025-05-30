@@ -63,6 +63,7 @@ const SelectedGroupInfo = ({ groupId }) => {
             },
         };
         const res = await api.post("/api/group/join", data);
+        console.log(res);
         if (res) return true;
         else return false;
     };
@@ -120,17 +121,25 @@ const SelectedGroupInfo = ({ groupId }) => {
                 cancelButtonText: "취소",
             }).then(async (res) => {
                 if (res.isConfirmed) {
-                    await joinGroup(null);
-
-                    Swal.fire({
-                        position: "center",
-                        icon: "success",
-                        title: "그룹에 정상적으로 참가했어요!",
-                        showConfirmButton: false,
-                        timer: 1500,
-                    });
-
-                    setIsMember(true);
+                    let ans = await joinGroup(null);
+                    if (ans) {
+                        Swal.fire({
+                            position: "center",
+                            icon: "success",
+                            title: "그룹에 정상적으로 참가했어요!",
+                            showConfirmButton: false,
+                            timer: 1500,
+                        });
+                        setIsMember(true);
+                    } else {
+                        Swal.fire({
+                            position: "center",
+                            icon: "error",
+                            title: "오류로 인해 참가 실패 했어요!",
+                            showConfirmButton: false,
+                            timer: 1500,
+                        });
+                    }
                 } else {
                     Swal.fire({
                         position: "center",
