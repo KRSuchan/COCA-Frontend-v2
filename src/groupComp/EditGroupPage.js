@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { UserOutlined } from "@ant-design/icons";
 import styles from "../css/GroupPage.module.css";
 import api from "../security/CocaApi";
@@ -10,17 +9,11 @@ import { Modal, Button } from "antd";
 import { showLoginRequired } from "../security/ErrorController";
 
 const EditGroupPage = () => {
-    useEffect(() => {
-        const id = localStorage.getItem("userId");
-        if (id === null) {
-            showLoginRequired(navigate);
-        }
-    }, []);
-
-    const { groupId } = useParams();
     const navigate = useNavigate();
+    const { groupId } = useParams();
+    const dispatch = useDispatch();
 
-    // useState를 사용하여 그룹 정보 상태 관리
+    // 그룹 정보 상태
     const [groupDetails, setGroupDetails] = useState(null);
     const [availableTags, setAvailableTags] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,8 +21,16 @@ const EditGroupPage = () => {
     const [members, setMembers] = useState([]);
     const [privatePassword, setPrivatePassword] = useState("");
     const [originalManager, setOriginalManager] = useState([]);
-    const dispatch = useDispatch();
 
+    // 로그인 체크
+    useEffect(() => {
+        const id = localStorage.getItem("userId");
+        if (id === null) {
+            showLoginRequired(navigate);
+        }
+    }, [navigate]);
+
+    // 그룹 정보 및 태그 정보 불러오기
     useEffect(() => {
         if (groupId) {
             fetchGroupDetails(groupId).then((response) => {
@@ -38,10 +39,7 @@ const EditGroupPage = () => {
                     setOriginalManager(response.data.groupManagers);
                     setPrivatePassword(response.data.privatePassword || "");
                 } else {
-                    // 백엔드에서 데이터를 가져오지 못했을 때 더미 데이터 사용
-                    console.error(
-                        "그룹 정보를 가져오는데 실패했습니다. 더미 데이터를 사용합니다."
-                    );
+                    // 더미 데이터
                     setGroupDetails({
                         groupId: 11,
                         name: "수정NAME",
@@ -86,8 +84,6 @@ const EditGroupPage = () => {
                 if (response && response.code === 200) {
                     setAvailableTags(response.data);
                 } else {
-                    console.error("태그 정보를 가져오는데 실패했습니다.");
-                    // 태그 정보를 가져오지 못했을 때 더미 데이터 사용
                     setAvailableTags([
                         { id: 1, field: "IT", name: "스프링" },
                         { id: 2, field: "IT", name: "자바" },
@@ -103,42 +99,27 @@ const EditGroupPage = () => {
         }
     }, [groupId]);
 
-    // 백엔드에서 그룹 정보를 가져오는 함수 (미구현 상태)
+    // 그룹 정보 불러오기
     const fetchGroupDetails = async (groupId) => {
         const data = {
             member: {
                 id: localStorage.getItem("userId"),
-                // password: "a"
             },
             group: {
                 id: groupId,
             },
         };
-
         const res = await api.post(`/api/group/admin`, data);
-
         return res.data;
-        // 403 접근 제한 에러일 경우
-        // Swal.fire({
-        //     position: "center",
-        //     icon: "error",
-        //     title: "에러!",
-        //     text: "접근할 수 없는 페이지에요!",
-        //     showConfirmButton: false,
-        //     timer: 1500,
-        // }).then((res) => {
-        //     navigate("/main");
-        // });
     };
 
-    // 백엔드에서 태그 목록을 가져오는 함수
+    // 태그 정보 불러오기
     const fetchTags = async () => {
-        // TODO: 백엔드 API 호출 로직 구현
         const res = await api.get("/api/tag/all");
         return res.data;
     };
 
-    // 백엔드에서 멤버 목록을 가져오는 함수
+    // 멤버 목록 불러오기
     const fetchMembers = async () => {
         const res = await api.get(
             `/api/group/list/members/member/${localStorage.getItem(
@@ -148,25 +129,18 @@ const EditGroupPage = () => {
         return res.data.data;
     };
 
+    // 그룹 정보 업데이트
     const updateGroup = async () => {
-        // TODO: 백엔드에 그룹 정보를 저장하는 로직 구현
-        const originalManagerIds = originalManager.map((manager) => manager.id); // originalManager의 id들만 추출
-
+        const originalManagerIds = originalManager.map((manager) => manager.id);
         const member2manager = groupDetails.groupManagers.filter(
-            (manager) => !originalManagerIds.includes(manager.id) // originalManager에 없는 항목만 필터링
+            (manager) => !originalManagerIds.includes(manager.id)
         );
-
-        console.log(member2manager);
-
         const groupManagerIds = groupDetails.groupManagers.map(
             (manager) => manager.id
-        ); // groupDetails.groupManagers의 id들만 추출
-
-        const manager2member = originalManager.filter(
-            (manager) => !groupManagerIds.includes(manager.id) // groupManagerIds에 manager.id가 포함되지 않는 경우만 필터링
         );
-
-        console.log(manager2member);
+        const manager2member = originalManager.filter(
+            (manager) => !groupManagerIds.includes(manager.id)
+        );
 
         let groupData = {
             group: {
@@ -186,13 +160,14 @@ const EditGroupPage = () => {
             },
             membersToManager: member2manager,
             managersToMember: manager2member,
+            privatePassword: privatePassword,
         };
 
         const res = await api.put("/api/group/update", groupData);
-        if (res) return true;
-        else return false;
+        return !!res;
     };
 
+    // 저장 버튼
     const handleSave = async () => {
         Swal.fire({
             icon: "question",
@@ -202,16 +177,15 @@ const EditGroupPage = () => {
             cancelButtonText: "취소",
         }).then(async (res) => {
             if (res.isConfirmed) {
-                const res = await updateGroup();
-
-                if (res) {
+                const result = await updateGroup();
+                if (result) {
                     Swal.fire({
                         position: "center",
                         icon: "success",
                         title: "정상적으로 변경되었어요!",
                         showConfirmButton: false,
                         timer: 1500,
-                    }).then((res) => {
+                    }).then(() => {
                         window.location.reload();
                     });
                 } else {
@@ -235,16 +209,17 @@ const EditGroupPage = () => {
         });
     };
 
+    // 그룹 삭제
     const deleteGroup = async () => {
         const res = await api.del(
             `/api/group/delete?adminId=${localStorage.getItem(
                 "userId"
             )}&groupId=${groupId}`
         );
-        if (res) return true;
-        else return false;
+        return !!res;
     };
 
+    // 삭제 버튼
     const handleDelete = async () => {
         Swal.fire({
             icon: "warning",
@@ -265,13 +240,11 @@ const EditGroupPage = () => {
                 if (!res) {
                     return Swal.showValidationMessage("비밀번호가 달라요!");
                 }
-
                 return res;
             },
         }).then(async (res) => {
             if (res.isConfirmed) {
                 const response = await deleteGroup();
-
                 if (response) {
                     Swal.fire({
                         position: "center",
@@ -280,7 +253,7 @@ const EditGroupPage = () => {
                         text: "그룹이 정상적으로 삭제되었어요!",
                         showConfirmButton: false,
                         timer: 1500,
-                    }).then((res) => {
+                    }).then(() => {
                         dispatch({ type: "RESET_STATE", payload: null });
                         navigate("/main");
                         window.location.reload();
@@ -298,10 +271,12 @@ const EditGroupPage = () => {
         });
     };
 
+    // 취소 버튼
     const handleCancel = () => {
         navigate(-1);
     };
 
+    // 매니저 변경
     const handleManagerChange = (index, newManager) => {
         if (!groupDetails) return;
         const newManagers = [...groupDetails.groupManagers];
@@ -309,17 +284,14 @@ const EditGroupPage = () => {
         setGroupDetails({ ...groupDetails, groupManagers: newManagers });
     };
 
+    // 매니저 해임
     const handleManagerDelete = (index) => {
         const newManagers = [...groupDetails.groupManagers];
         newManagers.splice(index, 1);
         setGroupDetails({ ...groupDetails, groupManagers: newManagers });
     };
 
-    const handleManagerSave = (index) => {
-        // TODO: 백엔드에서 프사 다시 받아오는 기능 구현
-        console.log(`Save manager at index ${index}`);
-    };
-
+    // 멤버 선택 모달 열기
     const openMemberModal = async (index) => {
         const members = await fetchMembers();
         const filteredMembers = members.filter(
@@ -333,6 +305,7 @@ const EditGroupPage = () => {
         setIsModalOpen(true);
     };
 
+    // 멤버 선택
     const handleMemberSelect = (member) => {
         handleManagerChange(currentManagerIndex, member);
         setIsModalOpen(false);
@@ -344,8 +317,6 @@ const EditGroupPage = () => {
 
     return (
         <div style={{ padding: "50px 200px" }}>
-            {" "}
-            {/* 패딩 추가 */}
             <div className={styles.createGroupPageBox}>
                 <span className={styles.groupNameTitle}>그룹 수정</span>
                 <div className={styles.createGroupPage}>
@@ -473,7 +444,6 @@ const EditGroupPage = () => {
                                                 >
                                                     해임
                                                 </button>
-                                                {/* <button onClick={() => handleManagerSave(index)} className={styles.joinButton}>저장</button> */}
                                                 <button
                                                     onClick={() =>
                                                         openMemberModal(index)
@@ -611,7 +581,7 @@ const EditGroupPage = () => {
             </div>
             <Modal
                 title="멤버 선택"
-                visible={isModalOpen}
+                open={isModalOpen}
                 onCancel={() => setIsModalOpen(false)}
                 footer={[
                     <Button key="cancel" onClick={() => setIsModalOpen(false)}>
@@ -626,7 +596,7 @@ const EditGroupPage = () => {
                     </Button>,
                 ]}
                 getContainer={false}
-                destroyOnClose={true}
+                destroyOnHidden={true}
             >
                 <div className={styles.membersContainer}>
                     {members.map((member) => (

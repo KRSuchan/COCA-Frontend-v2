@@ -1,35 +1,42 @@
 import React, { useState } from "react";
-import { SketchPicker } from "react-color"; // Color Picker를 위한 라이브러리
+import { SketchPicker } from "react-color";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../security/CocaApi";
 import { dateValidationCheck } from "../security/ErrorController";
 
-// ✨ 추가, 수정, 삭제가 모두 가능한 페이지입니다.
-// ✨ 수정 삭제하러 들어왔을 때에만 editingSchedule 에 수정할 이벤트정보가 담겨서 오게되어요
-// ✨ 기존 저장버튼을 누르면 postSchedule 함수 실행했던 것이 saveSchedule 함수로 가도록 수정함
-
 const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
-    const navigate = useNavigate();
+    // 최상단에서 useSelector 사용
+    const reduxSelectedGroup = useSelector((state) => state.selectedGroup);
+
+    // localStorage에서 selectedGroup 우선 적용
+    const selectedGroup = (() => {
+        const saved = localStorage.getItem("selectedGroup");
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch {
+                return reduxSelectedGroup;
+            }
+        }
+        return reduxSelectedGroup;
+    })();
 
     const formatDate = (date) => {
         const tmpDate = new Date(date);
-
         const year = tmpDate.getFullYear();
         const month = String(tmpDate.getMonth() + 1).padStart(2, "0");
         const day = String(tmpDate.getDate()).padStart(2, "0");
         const hours = String(tmpDate.getHours()).padStart(2, "0");
         const minutes = String(tmpDate.getMinutes()).padStart(2, "0");
         const seconds = String(tmpDate.getSeconds()).padStart(2, "0");
-
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     };
 
-    // 상태 초기화를 editingSchedule이 있을 경우 해당 데이터로 설정
-    const [scheduleId, setScheduleId] = useState(
-        editingSchedule ? editingSchedule.id : null
-    );
+    // 상태 초기화
+    const scheduleId = editingSchedule
+        ? editingSchedule.id || editingSchedule.scheduleId
+        : null;
     const [scheduleName, setScheduleName] = useState(
         editingSchedule ? editingSchedule.title : ""
     );
@@ -56,44 +63,37 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
         editingSchedule ? editingSchedule.isPrivate : false
     );
     const [attachments, setAttachments] = useState(
-        editingSchedule
+        editingSchedule && editingSchedule.attachments
             ? [
                   editingSchedule.attachments[0] || null,
                   editingSchedule.attachments[1] || null,
               ]
             : [null, null]
     );
+    const [showColorPicker, setShowColorPicker] = useState(false);
 
-    const [showColorPicker, setShowColorPicker] = useState(false); // Color Picker 표시 여부를 관리하는 state
-
-    const selectedGroup = useSelector((state) => state.selectedGroup);
-
-    // 첨부파일 변경 처리 함수
+    // 첨부파일 변경
     const handleAttachmentChange = (event, index) => {
-        // 선택된 파일을 attachments 배열에 설정
         const newAttachments = [...attachments];
         newAttachments[index] = event.target.files[0];
         setAttachments(newAttachments);
     };
 
-    // 첨부파일 삭제 처리 함수
+    // 첨부파일 삭제
     const handleAttachmentDelete = (index) => {
         const newAttachments = [...attachments];
-        newAttachments[index] = null; // 인덱스에 해당하는 첨부파일을 null로 설정
+        newAttachments[index] = null;
         setAttachments(newAttachments);
-        document.getElementById(`attachment-${index}`).value = ""; // input 필드를 초기화
+        document.getElementById(`attachment-${index}`).value = "";
     };
 
-    // 일정 추가 또는 수정 로직
+    // 일정 저장
     const saveSchedule = async () => {
-        //✅ 저장버튼 혹은 수정버튼을 눌렀을때
         if (!(await dateValidationCheck(startDate, endDate))) {
             return;
         }
-
         let url;
         const method = editingSchedule ? "put" : "post";
-
         if (selectedGroup.groupId === -1) {
             url = editingSchedule
                 ? `/api/personal-schedule/update`
@@ -103,14 +103,12 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
             url = editingSchedule
                 ? `/api/group-schedule/update`
                 : `/api/group-schedule/add`;
-
             await postGroupSchedule(url, method);
         }
     };
 
-    // 일정 삭제 로직
+    // 일정 삭제
     const deleteSchedule = async () => {
-        // ✅ 삭제버튼을 눌렀을때
         const userId = localStorage.getItem("userId");
         let res;
         if (selectedGroup.groupId === -1) {
@@ -122,8 +120,11 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                 `/api/group-schedule/delete?memberId=${userId}&groupId=${selectedGroup.groupId}&scheduleId=${scheduleId}`
             );
         }
-
-        if (res.data.code === 200) {
+        if (
+            res &&
+            res.data &&
+            (res.data.code === 200 || res.data.code === 201)
+        ) {
             return true;
         } else {
             return false;
@@ -140,9 +141,8 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
             cancelButtonText: "취소",
         }).then(async (res) => {
             if (res.isConfirmed) {
-                const res = await deleteSchedule();
-
-                if (res) {
+                const result = await deleteSchedule();
+                if (result) {
                     Swal.fire({
                         position: "center",
                         icon: "success",
@@ -150,7 +150,7 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                         text: "일정을 정상적으로 삭제했어요!",
                         showConfirmButton: false,
                         timer: 1500,
-                    }).then((res) => {
+                    }).then(() => {
                         window.location.reload();
                     });
                 } else {
@@ -167,7 +167,7 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
         });
     };
 
-    // 개인
+    // 개인 일정 저장
     const postSchedule = async (url, method) => {
         const requestData = {
             personalSchedule: {
@@ -179,16 +179,12 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                 endTime: formatDate(endDate),
                 color: colorCode,
                 isPrivate: isPrivate,
-                // attachments: attachmentData
             },
             member: {
                 id: localStorage.getItem("userId"),
             },
-            // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
         };
-
         let response;
-
         if (method === "post") {
             response = await api.post(
                 url,
@@ -204,8 +200,11 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                 attachments
             );
         }
-
-        if (response.data.code === 200 || response.data.code === 201) {
+        if (
+            response &&
+            response.data &&
+            (response.data.code === 200 || response.data.code === 201)
+        ) {
             Swal.fire({
                 position: "center",
                 icon: "success",
@@ -216,13 +215,13 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                         : "일정을 정상적으로 수정했어요!",
                 showConfirmButton: false,
                 timer: 1500,
-            }).then((res) => {
+            }).then(() => {
                 window.location.reload();
             });
         }
     };
 
-    // 그룹
+    // 그룹 일정 저장
     const postGroupSchedule = async (url, method) => {
         const requestData = {
             scheduleId: scheduleId,
@@ -234,17 +233,28 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
             startTime: formatDate(startDate),
             endTime: formatDate(endDate),
             color: colorCode,
-            // isPrivate: isPrivate
-            // attachments: tmpAttachments || null // attachments가 존재하지 않으면 null로 설정
         };
-        const response = await api.post(
-            url,
-            requestData,
-            "attachments",
-            attachments
-        );
-
-        if (response.data.code === 200 || response.data.code === 201) {
+        let response;
+        if (method === "post") {
+            response = await api.post(
+                url,
+                requestData,
+                "attachments",
+                attachments
+            );
+        } else {
+            response = await api.put(
+                url,
+                requestData,
+                "attachments",
+                attachments
+            );
+        }
+        if (
+            response &&
+            response.data &&
+            (response.data.code === 200 || response.data.code === 201)
+        ) {
             Swal.fire({
                 position: "center",
                 icon: "success",
@@ -255,7 +265,7 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                         : "일정을 정상적으로 수정했어요!",
                 showConfirmButton: false,
                 timer: 1500,
-            }).then((res) => {
+            }).then(() => {
                 window.location.reload();
             });
         }
@@ -290,14 +300,12 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                         type="datetime-local"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                    />{" "}
-                    {/* 날짜와 시간 선택 */}
+                    />
                     <input
                         type="datetime-local"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                    />{" "}
-                    {/* 날짜와 시간 선택 */}
+                    />
                     <input
                         type="text"
                         value={location}
@@ -348,19 +356,11 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                     }}
                     onClick={() => setShowColorPicker((show) => !show)}
                 >
-                    {" "}
-                    {/* 색상 박스 클릭 시 Color Picker 표시 여부 토글 */}
-                    <div
-                        style={{ height: "30px", background: colorCode }}
-                    />{" "}
-                    {/* 선택된 색상 표시 */}
+                    <div style={{ height: "30px", background: colorCode }} />
                 </button>
                 {showColorPicker && (
-                    <div style={{}}>
-                        <div
-                            style={{}}
-                            onClick={() => setShowColorPicker(false)}
-                        />
+                    <div>
+                        <div onClick={() => setShowColorPicker(false)} />
                         <SketchPicker
                             color={colorCode}
                             onChangeComplete={(color) => {
@@ -368,8 +368,7 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                             }}
                         />
                     </div>
-                )}{" "}
-                {/* Color Picker */}
+                )}
                 {selectedGroup.groupId === -1 && (
                     <label className="col2">
                         <p>비공개일정🔒</p>
@@ -380,7 +379,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                         />
                     </label>
                 )}
-                {/* <button className="add-schedule-button" onClick={postSchedule}>일정추가</button> */}
                 <button
                     className="add-schedule-button"
                     style={{ marginTop: "10px" }}
