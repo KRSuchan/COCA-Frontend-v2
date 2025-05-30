@@ -69,7 +69,7 @@ const GroupsList = () => {
                         }).then(async (res) => {
                             dispatch({ type: "RESET_STATE", payload: null });
                             localStorage.removeItem("selectedGroup");
-                            navigate(-1);
+                            window.location.reload();
                         });
                     } else if (res.code === 400) {
                         Swal.fire({
@@ -79,7 +79,7 @@ const GroupsList = () => {
                             showConfirmButton: false,
                             timer: 1500,
                         }).then(async (res) => {
-                            navigate(-1);
+                            window.location.reload();
                         });
                     } else {
                         Swal.fire({
