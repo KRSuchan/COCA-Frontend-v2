@@ -44,8 +44,6 @@ const NewPage = ({
     };
 
     const handleHeartClick = (item) => {
-        //✌️ 하트 클릭했을��, 개인일정으로 저장
-        // 하트 클릭 핸들러 함수
         Swal.fire({
             icon: "question",
             title: "일정 추가",
@@ -55,8 +53,8 @@ const NewPage = ({
             cancelButtonText: "취소",
         }).then(async (res) => {
             if (res.isConfirmed) {
-                const res = await addToMySchedule(item);
-                if (res) {
+                const result = await addToMySchedule(item);
+                if (result) {
                     Swal.fire({
                         position: "center",
                         icon: "success",
@@ -64,7 +62,7 @@ const NewPage = ({
                         text: "일정을 정상적으로 추가했어요!",
                         showConfirmButton: false,
                         timer: 1500,
-                    }).then((res) => {
+                    }).then(() => {
                         window.location.reload();
                     });
                 } else {
@@ -104,11 +102,10 @@ const NewPage = ({
             )}에 등록된 내 일정을 모두 가져올까요?`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonText: "확",
+            confirmButtonText: "확인",
             cancelButtonText: "취소",
         }).then(async (result) => {
             if (result.isConfirmed) {
-                // 확인 버튼을 눌렀을 때 실행할 핸들러
                 const res = await addMyScehduleToGroup(selectedDate);
                 if (res === "no") {
                     Swal.fire({
@@ -127,7 +124,7 @@ const NewPage = ({
                         text: "일정을 정상적으로 추가했어요!",
                         showConfirmButton: false,
                         timer: 1500,
-                    }).then((res) => {
+                    }).then(() => {
                         window.location.reload();
                     });
                 } else {
@@ -187,8 +184,8 @@ const NewPage = ({
                                         selectedGroup.groupId === -1 ||
                                         selectedGroup.isAdmin
                                     ) {
-                                        setEditingSchedule(item); // 현재 편집할 일정을 상태로 설정
-                                        setActivePanel("editSchedule"); // 편집 패널로 전환
+                                        setEditingSchedule(item);
+                                        setActivePanel("editSchedule");
                                     }
                                 }}
                             >
@@ -240,15 +237,15 @@ const NewPage = ({
                             </div>
                             <div className="schedule-attachments">
                                 {item.attachments.map((attachment, i) => (
-                                    // <a key={i} href={attachment.filePath} download={attachment.fileName} target="_blank" rel="noopener noreferrer">
-                                    <a
+                                    <button
                                         key={i}
                                         onClick={() => downloadFile(attachment)}
+                                        style={{ cursor: "pointer" }}
                                     >
                                         <div className="attachment-name">
                                             💾 {attachment.fileName}
                                         </div>
-                                    </a>
+                                    </button>
                                 ))}
                             </div>
                         </div>
@@ -262,33 +259,30 @@ const NewPage = ({
                         일정추가
                     </button>
                 )}
-                {selectedGroup.groupId === -1 ||
-                    (selectedGroup.isAdmin &&
-                        (selectedGroup.isAdmin || selectedGroup.isManager) && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "row",
-                                }}
+                {selectedGroup.groupId !== -1 &&
+                    (selectedGroup.isAdmin || selectedGroup.isManager) && (
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "row",
+                            }}
+                        >
+                            <button
+                                className="add-schedule-button"
+                                onClick={() => setActivePanel("addSchedule")}
+                                style={{ marginRight: "10px" }}
                             >
-                                <button
-                                    className="add-schedule-button"
-                                    onClick={() =>
-                                        setActivePanel("addSchedule")
-                                    }
-                                    style={{ marginRight: "10px" }}
-                                >
-                                    일정추가
-                                </button>
-                                <button
-                                    className="add-schedule-button"
-                                    style={{ fontSize: "19px" }}
-                                    onClick={handleImportMySchedule}
-                                >
-                                    내일정가져오기
-                                </button>
-                            </div>
-                        ))}
+                                일정추가
+                            </button>
+                            <button
+                                className="add-schedule-button"
+                                style={{ fontSize: "19px" }}
+                                onClick={handleImportMySchedule}
+                            >
+                                내일정가져오기
+                            </button>
+                        </div>
+                    )}
             </div>
         </React.Fragment>
     );

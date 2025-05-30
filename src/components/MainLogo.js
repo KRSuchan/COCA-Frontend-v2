@@ -74,29 +74,39 @@ const MainLogo = () => {
             style={{ display: "flex", alignItems: "center" }}
         >
             <div
+                className="bell&logout"
                 style={{
-                    marginLeft: "20px",
+                    display: "flex",
+                    gap: "8px",
                     marginRight: "10px",
-                    cursor: "pointer",
+                    borderRight: "1px solid black",
                 }}
-                onClick={handleNotificationClick}
             >
-                <BellOutlined style={{ color: "gray", fontSize: "24px" }} />
+                <div
+                    style={{
+                        marginLeft: "20px",
+                        marginRight: "5px",
+                        cursor: "pointer",
+                    }}
+                    onClick={handleNotificationClick}
+                >
+                    <BellOutlined style={{ color: "gray", fontSize: "24px" }} />
+                </div>
+                <div
+                    style={{
+                        width: "70px",
+                        cursor: "pointer",
+                        background: "white",
+                        textAlign: "center",
+                    }}
+                    onClick={handleLogOut}
+                >
+                    {/* <LogoutOutlined style={{ color: "gray", fontSize: "24px" }} /> */}
+                    로그아웃
+                </div>
             </div>
-            <button
-                style={{
-                    width: "20%",
-                    margin: "1%",
-                    cursor: "pointer",
-                    background: "white",
-                }}
-                onClick={handleLogOut}
-            >
-                로그아웃
-                {/* <LogoutOutlined style={{ color: "gray", fontSize: "24px" }} /> */}
-            </button>
             <div
-                className="marquee-container"
+                className="notice"
                 style={{
                     flexGrow: 1,
                     overflow: "hidden",

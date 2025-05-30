@@ -82,13 +82,8 @@ function MainPage() {
     // ✅ 캘린더 슬롯 선택시!
     const onSlotSelect = async (date) => {
         setSelectedDate(date); // 선택한 날짜를 상태로 저장
-
-        console.log(date);
         try {
             let res;
-
-            console.log("selGId", selectedGroup);
-
             if (selectedGroup.groupId === -1) {
                 res = await getPersonalDetailSchedule(
                     localStorage.getItem("userId"),
@@ -110,9 +105,6 @@ function MainPage() {
                     };
                 });
             }
-
-            console.log("res3", res);
-
             if (res && res.code === 200) {
                 setSchedule(res.data);
             } else {
