@@ -256,19 +256,24 @@ const SettingPage = () => {
     // 비밀번호 변경 후 오류 발생 -> res = undefined -> res.id cannot read
     useEffect(() => {
         const fetchData = async () => {
-            const res = await api.post("/api/member/memberInfoInquiryReq", {
+            const res = await api.post("/api/member/info", {
                 id: state.id,
                 password: state.password,
             });
+            const id = res.data.data.id;
+            const username = res.data.data.userName;
+            const profileImgPath = res.data.data.profileimagePath;
+            const interest = res.data.data.interest;
+            console.log(res);
             if (res) {
                 setUserInfo({
-                    id: res.id,
+                    id: id,
                     password: "",
-                    userName: res.userName,
-                    profileImgPath: res.profileImgPath,
-                    interest: res.interest.map((item) => item.tagName),
+                    userName: username,
+                    profileImgPath: profileImgPath,
+                    interest: interest.map((item) => item.tagName),
                 });
-                setInterests(res.interest.map((item) => item.tagName));
+                setInterests(interest.map((item) => item.tagName));
             }
         };
         fetchData();
