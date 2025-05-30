@@ -183,8 +183,10 @@ const handleError = async ({ url, error, retry, retryFunc }) => {
             return retryFunc(retry - 1);
         } else {
             await forceLogout();
-            return null;
         }
+    } else if (status === 401 && retry === 0) {
+        localStorage.clear();
+        await forceLogout();
     } else {
         console.error("🔴error 발생");
         console.error("url : " + url);
