@@ -184,21 +184,12 @@ const NewPage = ({
                                 }}
                                 onClick={() => {
                                     if (
-                                        selectedGroup.groupId !== -1 &&
-                                        !selectedGroup.isAdmin
+                                        selectedGroup.groupId === -1 ||
+                                        selectedGroup.isAdmin
                                     ) {
-                                        Swal.fire({
-                                            position: "center",
-                                            icon: "warning",
-                                            title: "권한 없음",
-                                            text: "관리자만 일정을 편집할 수 있습니다.",
-                                            showConfirmButton: true,
-                                            confirmButtonText: "확인",
-                                        });
-                                        return;
+                                        setEditingSchedule(item); // 현재 편집할 일정을 상태로 설정
+                                        setActivePanel("editSchedule"); // 편집 패널로 전환
                                     }
-                                    setEditingSchedule(item); // 현재 편집할 일정을 상태로 설정
-                                    setActivePanel("editSchedule"); // 편집 패널로 전환
                                 }}
                             >
                                 {item.title}
@@ -271,25 +262,33 @@ const NewPage = ({
                         일정추가
                     </button>
                 )}
-                {selectedGroup.groupId !== -1 &&
-                    (selectedGroup.isAdmin || selectedGroup.isManager) && (
-                        <div style={{ display: "flex", flexDirection: "row" }}>
-                            <button
-                                className="add-schedule-button"
-                                onClick={() => setActivePanel("addSchedule")}
-                                style={{ marginRight: "10px" }}
+                {selectedGroup.groupId === -1 ||
+                    (selectedGroup.isAdmin &&
+                        (selectedGroup.isAdmin || selectedGroup.isManager) && (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                }}
                             >
-                                일정추가
-                            </button>
-                            <button
-                                className="add-schedule-button"
-                                style={{ fontSize: "19px" }}
-                                onClick={handleImportMySchedule}
-                            >
-                                내일정가져오기
-                            </button>
-                        </div>
-                    )}
+                                <button
+                                    className="add-schedule-button"
+                                    onClick={() =>
+                                        setActivePanel("addSchedule")
+                                    }
+                                    style={{ marginRight: "10px" }}
+                                >
+                                    일정추가
+                                </button>
+                                <button
+                                    className="add-schedule-button"
+                                    style={{ fontSize: "19px" }}
+                                    onClick={handleImportMySchedule}
+                                >
+                                    내일정가져오기
+                                </button>
+                            </div>
+                        ))}
             </div>
         </React.Fragment>
     );
