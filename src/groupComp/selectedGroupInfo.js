@@ -2,13 +2,10 @@ import { useState, useEffect } from "react";
 import { UserOutlined } from "@ant-design/icons"; // 사람 아이콘을 위한 import
 import styles from "../css/GroupPage.module.css";
 import api from "../security/CocaApi";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 // 그룹 검색 페이지
 const SelectedGroupInfo = ({ groupId }) => {
-    const navigate = useNavigate();
-
     // 상태 관리를 위한 기본값 설정
     const [group, setGroup] = useState({
         id: -1,
@@ -26,29 +23,19 @@ const SelectedGroupInfo = ({ groupId }) => {
         isMember: false,
     });
     const [isMember, setIsMember] = useState(false); // 가입여부
-    const [isManager, setIsManager] = useState(true); // 관리자 여부를 상태로 관리
 
-    const fetchGroupData = async () => {
-        const res = await api.get(
-            `/api/group/detail?memberId=${localStorage.getItem(
-                "userId"
-            )}&groupId=${groupId}`
-        );
-        if (res) return res.data.data;
-        else return null;
-    };
-
-    // 컴포넌트 마운트 시 백엔드에서 데이터를 가져오는 효과
     useEffect(() => {
-        //✅ 그룹 상세정보 가져오면됨, 해당그룹 가입여부와 관리자여부는 백엔드측에서 추가해야 할듯
-        console.log("그룹 선택2:", groupId);
         const setData = async () => {
-            const res = await fetchGroupData();
+            let res = await api.get(
+                `/api/group/detail?memberId=${localStorage.getItem(
+                    "userId"
+                )}&groupId=${groupId}`
+            );
+            if (res) res = res.data.data;
+            else return null;
             setGroup(res);
             setIsMember(res.isMember);
-            setIsManager(res.isAdmin);
         };
-
         setData();
     }, [groupId]);
 
@@ -63,15 +50,12 @@ const SelectedGroupInfo = ({ groupId }) => {
             },
         };
         const res = await api.post("/api/group/join", data);
-        console.log(res);
         if (res) return true;
         else return false;
     };
 
     // 백엔드와 통신하여 그룹 참가 처리
     const handleJoinGroup = () => {
-        console.log(group);
-
         if (group.isPrivate) {
             Swal.fire({
                 icon: "question",
@@ -177,11 +161,7 @@ const SelectedGroupInfo = ({ groupId }) => {
             confirmButtonText: "보내기",
             cancelButtonText: "취소",
             preConfirm: async (inviteId) => {
-                console.log(
-                    `그룹 ID: ${groupId}, 초대할 사용자 ID: ${inviteId}`
-                );
                 const res = await inviteGroup(groupId, inviteId);
-                console.log(res);
                 if (res === 404) {
                     return Swal.showValidationMessage(
                         "해당 유저를 찾지 못했어요!"

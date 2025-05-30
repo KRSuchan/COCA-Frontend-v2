@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UserOutlined, EditOutlined } from "@ant-design/icons"; // 아이콘 추가
 import styles from "./css/SettingPage.module.css"; // 스타일 시트 임포트
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,6 +7,8 @@ import api from "./security/CocaApi";
 
 const SettingPage = () => {
     let { state } = useLocation();
+    const idRef = useRef(state.id);
+    const passwordRef = useRef(state.password);
     const [userInfo, setUserInfo] = useState({
         id: state?.id,
         password: state?.password,
@@ -16,7 +18,7 @@ const SettingPage = () => {
     });
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileImage, setProfileImage] = useState(null);
-    const [profileImageFile, setProfileImageFile] = useState(null);
+    const [newProfileImageFile, setNewProfileImageFile] = useState(null);
     const [originalProfileImgPath, setOriginalProfileImgPath] = useState("");
     const [interests, setInterests] = useState(["", "", ""]);
 
@@ -75,7 +77,7 @@ const SettingPage = () => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setProfileImage(reader.result);
-                setProfileImageFile(file);
+                setNewProfileImageFile(file);
                 setUserInfo({ ...userInfo, profileImgPath: reader.result });
                 state.profileImgPath = reader.result; // Update state with new profile image
             };
@@ -92,7 +94,7 @@ const SettingPage = () => {
     const handleProfileEditCancel = () => {
         setIsEditingProfile(false);
         setProfileImage(null);
-        setProfileImageFile(null);
+        setNewProfileImageFile(null);
         setUserInfo((prevState) => ({
             ...prevState,
             profileImgPath: originalProfileImgPath,
@@ -111,15 +113,14 @@ const SettingPage = () => {
                 })
                 .filter((tag) => tag !== null);
             if (userInfo.password === "") {
-                console.log("pw blanked");
                 data = {
                     id: userInfo.id,
                     password: "",
                     userName: userInfo.userName,
                     profileImageUrl:
-                        profileImageFile === null && !isEditingProfile
+                        newProfileImageFile === null && !isEditingProfile
                             ? userInfo.profileImgPath
-                            : "",
+                            : null,
                     interestId: interestData,
                 };
             } else {
@@ -128,9 +129,9 @@ const SettingPage = () => {
                     password: userInfo.password,
                     userName: userInfo.userName,
                     profileImageUrl:
-                        profileImageFile === null && !isEditingProfile
+                        newProfileImageFile === null && !isEditingProfile
                             ? userInfo.profileImgPath
-                            : "",
+                            : null,
                     interestId: interestData,
                 };
             }
@@ -138,7 +139,7 @@ const SettingPage = () => {
                 "/api/member/update",
                 data,
                 "profileImage",
-                profileImageFile
+                newProfileImageFile
             );
             if (res.data.code === 200) {
                 state.password = data.password;
@@ -249,22 +250,22 @@ const SettingPage = () => {
             }
         });
     };
+
     // handleBack : 뒤로가기 버튼 동작(/main으로 이동)
     const handleBack = () => {
         navigate("/main");
     };
-    // 비밀번호 변경 후 오류 발생 -> res = undefined -> res.id cannot read
+
     useEffect(() => {
         const fetchData = async () => {
             const res = await api.post("/api/member/info", {
-                id: state.id,
-                password: state.password,
+                id: idRef.current,
+                password: passwordRef.current,
             });
             const id = res.data.data.id;
             const username = res.data.data.userName;
             const profileImgPath = res.data.data.profileimagePath;
             const interest = res.data.data.interest;
-            console.log(res);
             if (res) {
                 setUserInfo({
                     id: id,
