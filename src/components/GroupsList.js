@@ -29,7 +29,8 @@ const GroupsList = () => {
         if (!group || group.groupId === -1) {
             setSelectedGroup(groups[0]);
         } else {
-            setSelectedGroup(groups[group.groupId]);
+            const selected = groups.find((g) => g.groupId === group.groupId);
+            setSelectedGroup(selected);
             dispatch({ type: "SELECT_GROUP", payload: group });
         }
     }, [groups, dispatch]);
