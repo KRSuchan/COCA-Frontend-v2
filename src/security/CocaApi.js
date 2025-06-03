@@ -12,11 +12,6 @@ export const get = async (url, retry = 1) => {
             res,
         });
     } catch (error) {
-        console.error("Caught in catch:");
-        console.error("Is AxiosError:", axios.isAxiosError(error));
-        console.error("Error object:", error);
-        console.error("Error response:", error.response);
-
         return await handleError({
             url,
             error,
@@ -99,10 +94,12 @@ export const del = async (url, retry = 1) => {
 
 const refreshAccessToken = async () => {
     try {
-        const config = getAuthConfig("refreshToken");
+        const config = getAuthConfig();
         const response = await axios.post(
             process.env.REACT_APP_SERVER_URL + "/api/jwt/reissue",
-            null,
+            {
+                refreshToken: localStorage.getItem("refreshToken"),
+            },
             config
         );
 
@@ -179,12 +176,13 @@ const handleError = async ({ url, error, retry, retryFunc }) => {
     const status = error?.response?.status;
     if (status === 401 && retry > 0) {
         const refreshed = await refreshAccessToken();
-        if (refreshed && retry > 0) {
+        if (refreshed) {
             return retryFunc(retry - 1);
         } else {
             await forceLogout();
         }
     } else if (status === 401 && retry === 0) {
+        console.log("retry and is 0");
         localStorage.clear();
         await forceLogout();
     } else {
