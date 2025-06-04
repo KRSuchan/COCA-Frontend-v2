@@ -25,7 +25,7 @@ export const get = async (url, retry = 1) => {
 export const post = async (url, data, multipartName, multiparts, retry = 1) => {
     try {
         let config = getAuthConfig();
-        if (multipartName !== undefined) {
+        if (!(data instanceof FormData) && multipartName !== undefined) {
             data = await makeForm(data, multipartName, multiparts);
         }
         const res = await axios.post(
