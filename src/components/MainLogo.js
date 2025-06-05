@@ -11,7 +11,9 @@ const MainLogo = () => {
     const selectedGroup = useSelector((state) => state.selectedGroup);
 
     const handleLogOut = async () => {
-        await api.post("/api/member/logoutReq", null);
+        await api.post("/api/member/logout", {
+            refreshToken: localStorage.getItem("refreshToken"),
+        });
         localStorage.clear();
         navigate("/");
     };
