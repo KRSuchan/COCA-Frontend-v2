@@ -6,10 +6,7 @@ import api from "../security/CocaApi";
 import { dateValidationCheck } from "../security/ErrorController";
 
 const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
-    // 최상단에서 useSelector 사용
     const reduxSelectedGroup = useSelector((state) => state.selectedGroup);
-
-    // localStorage에서 selectedGroup 우선 적용
     const selectedGroup = (() => {
         const saved = localStorage.getItem("selectedGroup");
         if (saved) {
@@ -23,14 +20,7 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
     })();
 
     const formatDate = (date) => {
-        const tmpDate = new Date(date);
-        const year = tmpDate.getFullYear();
-        const month = String(tmpDate.getMonth() + 1).padStart(2, "0");
-        const day = String(tmpDate.getDate()).padStart(2, "0");
-        const hours = String(tmpDate.getHours()).padStart(2, "0");
-        const minutes = String(tmpDate.getMinutes()).padStart(2, "0");
-        const seconds = String(tmpDate.getSeconds()).padStart(2, "0");
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        return new Date(date).toISOString().slice(0, 19).replace("T", " ");
     };
 
     // 상태 초기화
