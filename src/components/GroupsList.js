@@ -14,7 +14,6 @@ const GroupsList = () => {
     );
     const navigate = useNavigate();
     const dispatch = useDispatch();
-
     const quitGroup = async (group) => {
         const res = await api.del(
             `/api/group/leave/member/${localStorage.getItem("userId")}/group/${
