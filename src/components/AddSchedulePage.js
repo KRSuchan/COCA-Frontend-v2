@@ -111,11 +111,11 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
         let res;
         if (selectedGroup.groupId === -1) {
             res = await api.del(
-                `/api/personal-schedule/delete?memberId=${userId}&personalScheduleId=${scheduleId}`
+                `/api/personal-schedule/delete?personalScheduleId=${scheduleId}`
             );
         } else {
             res = await api.del(
-                `/api/group-schedule/delete?memberId=${userId}&groupId=${selectedGroup.groupId}&scheduleId=${scheduleId}`
+                `/api/group-schedule/delete?groupId=${selectedGroup.groupId}&scheduleId=${scheduleId}`
             );
         }
         if (
@@ -178,9 +178,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
                 color: colorCode,
                 isPrivate: isPrivate,
             },
-            member: {
-                id: localStorage.getItem("userId"),
-            },
         };
         let response;
         if (method === "post") {
@@ -223,7 +220,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
     const postGroupSchedule = async (url, method) => {
         const requestData = {
             scheduleId: scheduleId,
-            memberId: localStorage.getItem("userId"),
             groupId: selectedGroup.groupId,
             title: scheduleName,
             description: scheduleDescription,
