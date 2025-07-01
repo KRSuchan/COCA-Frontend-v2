@@ -102,6 +102,7 @@ const refreshAccessToken = async () => {
             },
             config
         );
+        console.log("reissue!!");
 
         if (response.data.code === 200) {
             localStorage.setItem("accessToken", response.data.data.accessToken);
