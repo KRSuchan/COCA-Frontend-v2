@@ -107,7 +107,6 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
 
     // 일정 삭제
     const deleteSchedule = async () => {
-        const userId = localStorage.getItem("userId");
         let res;
         if (selectedGroup.groupId === -1) {
             res = await api.del(
@@ -168,16 +167,14 @@ const AddSchedulePage = ({ setActivePanel, selectedDate, editingSchedule }) => {
     // 개인 일정 저장
     const postSchedule = async (url, method) => {
         const requestData = {
-            personalSchedule: {
-                id: scheduleId,
-                title: scheduleName,
-                description: scheduleDescription,
-                location: location,
-                startTime: formatDate(startDate),
-                endTime: formatDate(endDate),
-                color: colorCode,
-                isPrivate: isPrivate,
-            },
+            id: scheduleId,
+            title: scheduleName,
+            description: scheduleDescription,
+            location: location,
+            startTime: formatDate(startDate),
+            endTime: formatDate(endDate),
+            color: colorCode,
+            isPrivate: isPrivate,
         };
         let response;
         if (method === "post") {
