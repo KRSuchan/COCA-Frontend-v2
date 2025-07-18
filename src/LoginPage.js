@@ -62,7 +62,7 @@ function LoginPage() {
                 );
 
                 navigate("/main");
-            } else if (res.data.code === 400) {
+            } else if (res.data.code === 401001) {
                 console.log("로그인 실패");
                 Swal.fire({
                     position: "center",

@@ -190,6 +190,7 @@ const handleError = async ({ url, error, retry, retryFunc }) => {
         console.error("🔴error 발생");
         console.error("url : " + url);
         console.error("error message : ", error);
+        return error;
     }
     return null;
 };
